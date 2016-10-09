@@ -12,10 +12,13 @@ use markdown::Deck;
 struct Options {}
 
 fn show_help(stdout: &mut Stdout) -> io::Result<()> {
-    write!(*stdout,
-           "{}{}RMDP: Markdown Presentation in Rust\n",
-           termion::clear::All,
-           termion::cursor::Goto(1, 1))
+    try!(write!(*stdout,
+                "{}{}",
+                termion::clear::All,
+                termion::cursor::Goto(1, 1)));
+    try!(write!(*stdout, "RMDP: Markdown Presentation in Rust\n"));
+    try!(write!(*stdout, "Press `s` to start"));
+    stdout.flush()
 }
 
 pub fn display(mut deck: Deck) -> io::Result<()> {
@@ -36,8 +39,7 @@ pub fn display(mut deck: Deck) -> io::Result<()> {
         while let Some(c) = key_reader.next() {
             try!(write!(stdout, " {:?}", c));
             match c.unwrap() {
-                Key::Char('s') => {
-                }
+                Key::Char('s') => {}
                 Key::Down | Key::Char('j') => {
                     deck.next();
                 }
@@ -56,8 +58,9 @@ pub fn display(mut deck: Deck) -> io::Result<()> {
 
         {
             let ref slide = deck.slide();
-            let ref line = slide.lines[0];
-            try!(write!(stdout, "{:?}", line.text));
+            for ref line in &slide.lines {
+                try!(write!(stdout, "{}\n", line));
+            }
 
             try!(write!(stdout, "{}", termion::cursor::Goto(1, h)));
             try!(write!(stdout, "{}", deck.current));

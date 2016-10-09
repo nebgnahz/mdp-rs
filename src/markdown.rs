@@ -1,9 +1,10 @@
 use std::string::String;
+use std::fmt::{Formatter, Display, Result};
+use termion::color;
+use termion::style;
 
-#[allow(dead_code)]
-enum LineType {
+pub enum Element {
     H1,
-    H2,
     Paragraph,
     Quote,
     Code,
@@ -11,6 +12,32 @@ enum LineType {
 
 pub struct Line {
     pub text: String,
+    pub elem: Element,
+}
+
+impl Display for Line {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        match self.elem {
+            Element::H1 => {
+                try!(write!(f,
+                            "{}{}{}{}{}",
+                            color::Fg(color::Red),
+                            style::Bold,
+                            self.text,
+                            style::Reset,
+                            color::Fg(color::Reset)));
+
+            }
+            Element::Paragraph => {
+                try!(write!(f, "{}", self.text));
+            }
+            Element::Quote => {
+                try!(write!(f, "{}{}{}", style::Italic, self.text, style::Reset));
+            }
+            _ => {}
+        }
+        Ok(())
+    }
 }
 
 pub struct Slide {
@@ -42,8 +69,26 @@ impl Deck {
 
 /// Create a demo deck
 pub fn demo() -> Deck {
-    let slide1 = Slide { lines: vec![Line { text: "Hello Slide 1".to_string() }] };
-    let slide2 = Slide { lines: vec![Line { text: "Hello Slide 2".to_string() }] };
+    let slide1 = Slide {
+        lines: vec![Line {
+                        text: "Slide 1".to_string(),
+                        elem: Element::H1,
+                    },
+                    Line {
+                        text: "Paragraph on Page 1".to_string(),
+                        elem: Element::Paragraph,
+                    }],
+    };
+    let slide2 = Slide {
+        lines: vec![Line {
+                        text: "Hello Slide 2".to_string(),
+                        elem: Element::H1,
+                    },
+                    Line {
+                        text: "A great quote from someone".to_string(),
+                        elem: Element::Quote,
+                    }],
+    };
     Deck {
         slides: vec![slide1, slide2],
         current: 0,
