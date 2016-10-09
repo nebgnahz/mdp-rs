@@ -22,7 +22,6 @@ fn main() {
         return;
     }
 
-    println!("Hello, world!");
-
-    rmdp::viewer::display().unwrap();
+    let deck = rmdp::markdown::demo();
+    rmdp::viewer::display(deck).unwrap();
 }
