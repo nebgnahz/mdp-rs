@@ -1,5 +1,5 @@
 [package]
-name = "rmdp"
+name = "mdp"
 version = "0.1.0"
 authors = ["Ben Zhang <benzh@cs.berkeley.edu>"]
 

@@ -6,7 +6,7 @@ use input::ImmediateInput;
 use termion;
 use termion::input::TermRead;
 use termion::event::Key;
-use markdown::Deck;
+use deck::Deck;
 
 #[allow(dead_code)]
 struct Options {}
