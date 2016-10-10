@@ -2,6 +2,7 @@ use std::string::String;
 use std::fmt::{Formatter, Display, Result};
 use termion::color;
 use termion::style;
+use style::{text_fill_column, code_fill_column};
 
 pub enum Element {
     H1,
@@ -26,15 +27,30 @@ impl Display for Line {
                             self.text,
                             style::Reset,
                             color::Fg(color::Reset)));
-
             }
             Element::Paragraph => {
-                try!(write!(f, "{}", self.text));
+                let lines = text_fill_column(&self.text, 80);
+                for line in lines {
+                    try!(writeln!(f, "{}", line));
+                }
             }
             Element::Quote => {
-                try!(write!(f, "{}{}{}", style::Italic, self.text, style::Reset));
+                // Italic
+                try!(write!(f, "{}", style::Italic));
+                for line in text_fill_column(&self.text, 80) {
+                    try!(writeln!(f, "{}", line));
+                }
+                try!(write!(f, "{}", style::Reset));
             }
-            _ => {}
+            Element::Code => {
+                try!(write!(f, "{}", color::Bg(color::White)));
+                try!(write!(f, "{}", color::Fg(color::Black)));
+                for line in code_fill_column(&self.text, 80) {
+                    try!(writeln!(f, "{}", line));
+                }
+                try!(write!(f, "{}", color::Fg(color::Reset)));
+                try!(write!(f, "{}", color::Bg(color::Reset)));
+            }
         }
         Ok(())
     }
@@ -67,6 +83,12 @@ impl Deck {
     }
 }
 
+const DEMO_CODE: &'static str = r#"#include <stdio.h>
+
+int main() {
+    printf(\"Hello World\");
+}"#;
+
 /// Create a demo deck
 pub fn demo() -> Deck {
     let slide1 = Slide {
@@ -75,22 +97,47 @@ pub fn demo() -> Deck {
                         elem: Element::H1,
                     },
                     Line {
-                        text: "Paragraph on Page 1".to_string(),
+                        text: "Lorem Ipsum is simply dummy text of the printing and typesetting \
+                               industry. Lorem Ipsum has been the industry's standard dummy text \
+                               ever since the 1500s, when an unknown printer took a galley of \
+                               type and scrambled it to make a type specimen book. It has \
+                               survived not only five centuries, but also the leap into \
+                               electronic typesetting, remaining essentially unchanged. It was \
+                               popularised in the 1960s with the release of Letraset sheets \
+                               containing Lorem Ipsum passages, and more recently with desktop \
+                               publishing software like Aldus PageMaker including versions of \
+                               Lorem Ipsum."
+                            .to_string(),
                         elem: Element::Paragraph,
                     }],
     };
+
     let slide2 = Slide {
         lines: vec![Line {
                         text: "Hello Slide 2".to_string(),
                         elem: Element::H1,
                     },
                     Line {
-                        text: "A great quote from someone".to_string(),
+                        text: "Start by doing what's necessary; then do what's possible; and \
+                               suddenly you are doing the impossible."
+                            .to_string(),
                         elem: Element::Quote,
                     }],
     };
+
+    let slide3 = Slide {
+        lines: vec![Line {
+                        text: "Hello Slide 3".to_string(),
+                        elem: Element::H1,
+                    },
+                    Line {
+                        text: DEMO_CODE.to_string(),
+                        elem: Element::Code,
+                    }],
+    };
+
     Deck {
-        slides: vec![slide1, slide2],
+        slides: vec![slide1, slide2, slide3],
         current: 0,
     }
 }
