@@ -4,10 +4,14 @@ cache: cargo
 git:
   submodules: false
 
+os:
+  - linux
+#  - osx
+
 rust:
   - stable
-  - beta
-  - nightly
+#  - beta
+#  - nightly
 
 sudo: false
 
@@ -26,10 +30,6 @@ after_success:
 notifications:
   email:
     on_success: never
-
-os:
-  - linux
-  - osx
 
 env:
   global:
