@@ -1,8 +1,8 @@
+use std::fmt::{Display, Formatter, Result};
 use std::string::String;
-use std::fmt::{Formatter, Display, Result};
+use style::{code_fill_column, text_fill_column};
 use termion::color;
 use termion::style;
-use style::{text_fill_column, code_fill_column};
 
 #[derive(PartialEq, Eq, Clone, Copy)]
 pub enum Element {
@@ -24,13 +24,15 @@ impl Display for Line {
     fn fmt(&self, f: &mut Formatter) -> Result {
         match self.elem {
             Element::H1 => {
-                try!(write!(f,
-                            "{}{}{}{}{}",
-                            color::Fg(color::Red),
-                            style::Bold,
-                            self.text,
-                            style::Reset,
-                            color::Fg(color::Reset)));
+                write!(
+                    f,
+                    "{}{}{}{}{}",
+                    color::Fg(color::Red),
+                    style::Bold,
+                    self.text,
+                    style::Reset,
+                    color::Fg(color::Reset)
+                )?
             }
             Element::Paragraph => {
                 let lines = text_fill_column(&self.text, 80);
@@ -113,12 +115,13 @@ int main() {
 /// Create a demo deck
 pub fn demo() -> Deck {
     let slide1 = Slide {
-        lines: vec![Line {
-                        text: "Slide 1".to_string(),
-                        elem: Element::H1,
-                    },
-                    Line {
-                        text: "Lorem Ipsum is simply dummy text of the printing and typesetting \
+        lines: vec![
+            Line {
+                text: "Slide 1".to_string(),
+                elem: Element::H1,
+            },
+            Line {
+                text: "Lorem Ipsum is simply dummy text of the printing and typesetting \
                                industry. Lorem Ipsum has been the industry's standard dummy text \
                                ever since the 1500s, when an unknown printer took a galley of \
                                type and scrambled it to make a type specimen book. It has \
@@ -128,33 +131,38 @@ pub fn demo() -> Deck {
                                containing Lorem Ipsum passages, and more recently with desktop \
                                publishing software like Aldus PageMaker including versions of \
                                Lorem Ipsum."
-                            .to_string(),
-                        elem: Element::Paragraph,
-                    }],
+                    .to_string(),
+                elem: Element::Paragraph,
+            },
+        ],
     };
 
     let slide2 = Slide {
-        lines: vec![Line {
-                        text: "Hello Slide 2".to_string(),
-                        elem: Element::H1,
-                    },
-                    Line {
-                        text: "Start by doing what's necessary; then do what's possible; and \
+        lines: vec![
+            Line {
+                text: "Hello Slide 2".to_string(),
+                elem: Element::H1,
+            },
+            Line {
+                text: "Start by doing what's necessary; then do what's possible; and \
                                suddenly you are doing the impossible."
-                            .to_string(),
-                        elem: Element::Quote,
-                    }],
+                    .to_string(),
+                elem: Element::Quote,
+            },
+        ],
     };
 
     let slide3 = Slide {
-        lines: vec![Line {
-                        text: "Hello Slide 3".to_string(),
-                        elem: Element::H1,
-                    },
-                    Line {
-                        text: DEMO_CODE.to_string(),
-                        elem: Element::Code,
-                    }],
+        lines: vec![
+            Line {
+                text: "Hello Slide 3".to_string(),
+                elem: Element::H1,
+            },
+            Line {
+                text: DEMO_CODE.to_string(),
+                elem: Element::Code,
+            },
+        ],
     };
 
     Deck {

@@ -1,27 +1,44 @@
+use deck::Deck;
+use input::ImmediateInput;
 use std::io;
 use std::io::{stdin, stdout};
 use std::io::Stdout;
 use std::io::Write;
-use input::ImmediateInput;
 use termion;
-use termion::input::TermRead;
 use termion::event::Key;
-use deck::Deck;
+use termion::input::TermRead;
 
 #[allow(dead_code)]
-struct Options {}
+struct ViewConfig {
+    width: u16,
+    height: u16,
+}
+
+impl ViewConfig {
+    pub fn new() -> io::Result<Self> {
+        let (width, height) = termion::terminal_size()?;
+        Ok(ViewConfig {
+            width: width,
+            height: height,
+        })
+    }
+}
 
 fn show_help(stdout: &mut Stdout) -> io::Result<()> {
-    try!(write!(*stdout,
-                "{}{}",
-                termion::clear::All,
-                termion::cursor::Goto(1, 1)));
+    try!(write!(
+        *stdout,
+        "{}{}",
+        termion::clear::All,
+        termion::cursor::Goto(1, 1)
+    ));
     try!(write!(*stdout, "RMDP: Markdown Presentation in Rust\n"));
     try!(write!(*stdout, "Press `s` to start"));
     stdout.flush()
 }
 
 pub fn display(mut deck: Deck) -> io::Result<()> {
+    let _view = ViewConfig::new();
+
     let stdin = stdin();
     let mut stdout = stdout();
 
@@ -37,8 +54,10 @@ pub fn display(mut deck: Deck) -> io::Result<()> {
 
     loop {
         while let Some(c) = key_reader.next() {
-            try!(write!(stdout, " {:?}", c));
             match c.unwrap() {
+                Key::Char('q') => {
+                    return stdout.flush();
+                }
                 Key::Char('s') => {}
                 Key::Down | Key::Char('j') => {
                     deck.next();
@@ -51,10 +70,12 @@ pub fn display(mut deck: Deck) -> io::Result<()> {
             break;
         }
 
-        try!(write!(stdout,
-                    "{}{}",
-                    termion::clear::All,
-                    termion::cursor::Goto(1, 1)));
+        try!(write!(
+            stdout,
+            "{}{}",
+            termion::clear::All,
+            termion::cursor::Goto(1, 1)
+        ));
 
         {
             let ref slide = deck.slide();
