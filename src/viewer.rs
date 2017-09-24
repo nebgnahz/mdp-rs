@@ -8,22 +8,6 @@ use termion;
 use termion::event::Key;
 use termion::input::TermRead;
 
-#[allow(dead_code)]
-struct ViewConfig {
-    width: u16,
-    height: u16,
-}
-
-impl ViewConfig {
-    pub fn new() -> io::Result<Self> {
-        let (width, height) = termion::terminal_size()?;
-        Ok(ViewConfig {
-            width: width,
-            height: height,
-        })
-    }
-}
-
 fn show_help(stdout: &mut Stdout) -> io::Result<()> {
     try!(write!(
         *stdout,
