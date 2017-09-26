@@ -1,13 +1,13 @@
+
 use Present;
 use ViewConfig;
 use pulldown_cmark::Parser;
-use std::fmt::{self, Display, Formatter};
 use std::fs::File;
 use std::io::{self, Read, Write};
 use std::path::Path;
 use term;
-use termion;
 use termion::{color, style};
+use textwrap;
 
 #[derive(Default, Debug)]
 pub struct Deck {
@@ -54,6 +54,10 @@ impl Deck {
     pub fn current_num(&self) -> usize {
         self.current
     }
+
+    pub fn total_num(&self) -> usize {
+        self.slides.len()
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -71,28 +75,38 @@ pub struct Slide {
 }
 
 impl Present for Slide {
-    fn present(&self, view: &mut ViewConfig) {
+    fn present(&self, view: &mut ViewConfig) -> io::Result<()> {
         for elem in &self.elems {
             match elem {
-                &Element::Title(ref title) => {
-                    let left = view.width() / 2 - title.len() as u16 / 2;
-                    write!(view, "{}", termion::cursor::Goto(left, 2)).unwrap();
+                &Element::Title(ref _title) => {
+                    // let left = view.width() / 2 - title.len() as u16 / 2;
+                    // write!(view, "{}", termion::cursor::Goto(left, 2))?;
                 }
                 _ => {}
             }
-            write!(view, "{}", elem).unwrap();;
+            view.present(elem)?;
+            view.newline()?;
         }
+        Ok(())
     }
 }
 
-impl Display for Element {
-    fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
+impl Present for Element {
+    fn present(&self, view: &mut ViewConfig) -> io::Result<()> {
         match self {
             &Element::Title(ref title) => {
+                write!(view, "{}{}", color::Fg(color::Red), style::Bold)?;
+                write!(view, "{}", title)?;
+                write!(view, "{}{}", style::Reset, color::Fg(color::Reset))?;
+            }
+            &Element::Paragraph(ref content) => {
                 // calculate the center
-                write!(f, "{}{}", color::Fg(color::Red), style::Bold)?;
-                write!(f, "{}", title)?;
-                write!(f, "{}{}", style::Reset, color::Fg(color::Reset))?;
+                let cols = view.width() as usize;
+                let lines = textwrap::Wrapper::new(cols).wrap(content);
+                for ref l in lines {
+                    view.newline()?;
+                    view.present(l)?;
+                }
             }
             _ => {}
         }

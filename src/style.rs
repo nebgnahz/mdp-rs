@@ -22,7 +22,7 @@ pub fn text_fill_column(text: &str, column_width: usize) -> Vec<String> {
 
 /// Take a string and a desired column width, fill it with space to the desired
 /// `column_width`.
-pub fn code_fill_column(code: &str, column_width: usize) -> Vec<String> {
+pub fn _code_fill_column(code: &str, column_width: usize) -> Vec<String> {
     let mut result = Vec::new();
     let mut filled_line = String::with_capacity(column_width);
     for line in code.lines() {

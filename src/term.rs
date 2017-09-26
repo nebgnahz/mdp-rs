@@ -25,8 +25,8 @@ impl<'a, 'b, I: Iterator<Item = Event<'a>>> Ctx<'b, I> {
                 Event::InlineHtml(_html) => {
                     unimplemented!{}
                 }
-                Event::SoftBreak => self.buf.push('\n'),
-                Event::HardBreak => self.buf.push_str("\n\n\n"),
+                Event::SoftBreak => self.buf.push(' '),
+                Event::HardBreak => self.buf.push_str("\n\n"),
                 Event::FootnoteReference(_name) => {}
             }
         }
