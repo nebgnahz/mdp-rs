@@ -12,12 +12,13 @@ struct Ctx<'b, I> {
     buf: &'b mut String,
     deck: Deck,
     slide: Slide,
+
+    in_block: bool,
 }
 
 impl<'a, 'b, I: Iterator<Item = Event<'a>>> Ctx<'b, I> {
     pub fn run(&mut self) -> Result<(), ::std::fmt::Error> {
         while let Some(event) = self.iter.next() {
-            println!("{:?}", event);
             match event {
                 Event::Start(tag) => self.start_tag(tag)?,
                 Event::End(tag) => self.end_tag(tag)?,
@@ -47,7 +48,7 @@ impl<'a, 'b, I: Iterator<Item = Event<'a>>> Ctx<'b, I> {
             Tag::TableRow => {}
             Tag::TableCell => {}
             Tag::BlockQuote => {
-                write!(self.buf, "{}", style::Italic)?;
+                self.in_block = true;
             }
             Tag::CodeBlock(_info) => {}
             Tag::List(_) => {}
@@ -65,6 +66,9 @@ impl<'a, 'b, I: Iterator<Item = Event<'a>>> Ctx<'b, I> {
     fn end_tag(&mut self, tag: Tag) -> Result<(), ::std::fmt::Error> {
         match tag {
             Tag::Paragraph => {
+                if self.in_block {
+                    return Ok(());
+                }
                 // add this element to slide
                 self.slide.add(Element::Paragraph(self.buf.clone()));
                 self.buf.clear()
@@ -83,7 +87,7 @@ impl<'a, 'b, I: Iterator<Item = Event<'a>>> Ctx<'b, I> {
             Tag::TableRow => {}
             Tag::TableCell => {}
             Tag::BlockQuote => {
-                write!(self.buf, "{}", style::Reset)?;
+                self.in_block = false;
                 self.slide.add(Element::Quote(self.buf.clone()));
                 self.buf.clear();
             }
@@ -118,6 +122,8 @@ where
         buf: buf,
         deck: Deck::default(),
         slide: Slide::default(),
+
+        in_block: false,
     };
     ctx.run().unwrap();
     ctx.deck

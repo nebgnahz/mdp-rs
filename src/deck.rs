@@ -1,10 +1,12 @@
 use Present;
 use ViewConfig;
-use pulldown_cmark::Parser;
-use std::fs::File;
-use std::io::{self, Read, Write};
-use std::path::Path;
-use term;
+use pulldown_cmark::{Parser, Tag};
+use pulldown_cmark::Event::{self, End, Html, InlineHtml, Start, Text};
+use pulldown_cmark::Event::{FootnoteReference, HardBreak, SoftBreak};
+
+use split;
+use std::borrow::Cow;
+use std::io::{self, Write};
 use termion::{color, style};
 use textwrap;
 
@@ -14,23 +16,84 @@ pub struct Deck {
     current: usize,
 }
 
-fn read_markdown<P: AsRef<Path>>(path: P) -> io::Result<String> {
-    let mut f = File::open(path)?;
-    let mut s = String::new();
-    f.read_to_string(&mut s)?;
-    Ok(s)
+#[derive(Default, Debug)]
+pub struct Deck2<'a> {
+    slides: Vec<Slide2<'a>>,
+    current: usize,
 }
 
-impl Deck {
-    pub fn from_path<P: AsRef<Path>>(path: P) -> io::Result<Deck> {
-        let content = read_markdown(path)?;
-        let parser = Parser::new(&content);
-        let mut buf = String::new();
+#[derive(Default, Debug)]
+pub struct Slide2<'a> {
+    content: Cow<'a, str>,
+    offset: usize,
+}
 
-        Ok(term::terminalize(&mut buf, parser))
+impl<'a> Slide2<'a> {
+    pub fn new(offset: usize, content: Cow<'a, str>) -> Self {
+        Slide2 {
+            content: content,
+            offset: offset,
+        }
+    }
+}
+
+impl<'a> Present for Slide2<'a> {
+    fn present(&self, view: &mut ViewConfig) -> io::Result<()> {
+        let parser = Parser::new(&self.content);
+        for element in parser {
+            println!("{:?}", element);
+        }
+
+        let parser = Parser::new(&self.content);
+        for element in parser {
+            view.present(&element)?;
+        }
+        Ok(())
+    }
+}
+
+impl<'a> Present for Event<'a> {
+    fn present(&self, view: &mut ViewConfig) -> io::Result<()> {
+        match self {
+            &Start(Tag::Emphasis) => view.start_italic(),
+            &End(Tag::Emphasis) => view.end_italic(),
+            &Start(Tag::Strong) => view.start_bold(),
+            &End(Tag::Strong) => view.end_bold(),
+            &Start(Tag::Code) => view.start_code(),
+            &End(Tag::Code) => view.end_code(),
+            &SoftBreak => view.newline(),
+            &Start(Tag::Header(level)) => view.start_header(level),
+            &End(Tag::Header(level)) => view.end_header(level),
+            &Start(Tag::CodeBlock(ref _lang)) => view.start_codeblock(),
+            &End(Tag::CodeBlock(ref _lang)) => view.end_codeblock(),
+            &Start(Tag::Paragraph) => view.start_paragraph(),
+            &End(Tag::Paragraph) => view.end_paragraph(),
+            &Start(_) => Ok(()),
+            &End(_) => Ok(()),
+            &Text(ref text) => view.show_text(text),
+            &Html(ref _html) |
+            &InlineHtml(ref _html) => unimplemented!{},
+            &FootnoteReference(ref _ref) => unimplemented!{},
+            &HardBreak => Ok(()),
+        }
+    }
+}
+
+impl<'a> Deck2<'a> {
+    pub fn new(content: &'a str) -> io::Result<Deck2<'a>> {
+        let slides = split::split(content)
+            .map(|s| Slide2::new(s.0, s.1))
+            .collect::<Vec<_>>();
+
+        let deck2 = Deck2 {
+            slides: slides,
+            current: 0,
+        };
+
+        Ok(deck2)
     }
 
-    pub fn add(&mut self, slide: Slide) {
+    pub fn add(&mut self, slide: Slide2<'a>) {
         self.slides.push(slide);
     }
 
@@ -46,7 +109,7 @@ impl Deck {
         }
     }
 
-    pub fn slide(&self) -> &Slide {
+    pub fn slide(&self) -> &'a Slide2 {
         &self.slides[self.current]
     }
 
@@ -110,6 +173,7 @@ impl Present for Element {
                 let cols = view.width() as usize;
                 write!(view, "{}", color::Bg(color::White))?;
                 write!(view, "{}", color::Fg(color::Black))?;
+                let content = content.trim_right_matches('\n');
                 for ref line in content.split('\n') {
                     view.newline()?;
                     view.present(line)?;
@@ -117,23 +181,25 @@ impl Present for Element {
                     let to_fill = cols - line.len();
                     let fill = (0..to_fill).map(|_| ' ').collect::<String>();
                     view.present(&fill)?;
-                    view.present(&"another line")?;
                 }
                 write!(view, "{}", color::Bg(color::Reset))?;
                 write!(view, "{}", color::Fg(color::Reset))?;
             }
-            _ => {}
+            &Element::Quote(ref content) => {
+                let cols = view.width() as usize;
+                let lines = textwrap::Wrapper::new(cols).wrap(content);
+                for ref line in lines {
+                    view.newline()?;
+                    write!(view, "{}", color::Bg(color::White))?;
+                    write!(view, " ")?;
+                    write!(view, "{}", color::Bg(color::Reset))?;
+                    write!(view, " ")?;
+                    view.present(line)?;
+                }
+                write!(view, "{}", color::Bg(color::Reset))?;
+                write!(view, "{}", color::Fg(color::Reset))?;
+            }
         }
         Ok(())
-    }
-}
-
-impl Slide {
-    pub fn add(&mut self, elem: Element) {
-        self.elems.push(elem);
-    }
-
-    pub fn clear(&mut self) {
-        self.elems.clear();
     }
 }

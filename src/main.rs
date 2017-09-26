@@ -3,7 +3,7 @@ extern crate structopt;
 #[macro_use]
 extern crate structopt_derive;
 
-use std::io::Result;
+use std::io::{Read, Result};
 use std::string::String;
 use structopt::StructOpt;
 
@@ -21,9 +21,14 @@ fn main() {
 }
 
 fn run(opt: Opt) -> Result<()> {
-    let deck = mdp::Deck::from_path(opt.file)?;
+    let mut f = ::std::fs::File::open(opt.file)?;
+    let mut s = String::new();
+    f.read_to_string(&mut s)?;
+
+    let deck = mdp::Deck2::new(&s)?;
     // println!("{:?}", deck);
     mdp::display(deck).unwrap();
+
     // let deck = mdp::deck::demo();
     // let deck = mdp::markdown::parse_document(&s);
     // mdp::viewer::display(deck).unwrap();

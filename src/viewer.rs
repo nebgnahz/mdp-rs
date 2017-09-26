@@ -1,5 +1,5 @@
 use super::ViewConfig;
-use deck::Deck;
+use deck::Deck2;
 use input::ImmediateInput;
 use std::io;
 use std::io::Write;
@@ -18,7 +18,7 @@ fn show_help(view: &mut ViewConfig) -> io::Result<()> {
     view.flush()
 }
 
-pub fn display(mut deck: Deck) -> io::Result<()> {
+pub fn display(mut deck: Deck2) -> io::Result<()> {
     let mut view = ViewConfig::new()?;
     let mut key_reader = stdin().keys();
 
@@ -51,11 +51,12 @@ pub fn display(mut deck: Deck) -> io::Result<()> {
         view.clear()?;
         view.present(deck.slide())?;
         show_page_num(&deck, &mut view)?;
+        view.hide_cursor()?;
         view.flush()?;
     }
 }
 
-fn show_page_num(deck: &Deck, view: &mut ViewConfig) -> io::Result<()> {
+fn show_page_num<'a>(deck: &'a Deck2, view: &mut ViewConfig) -> io::Result<()> {
     use std::fmt::Write;
     let mut s = String::new();
     write!(&mut s, "{}/{}", deck.current_num() + 1, deck.total_num()).unwrap();
