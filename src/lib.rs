@@ -3,115 +3,11 @@ extern crate termion;
 extern crate pulldown_cmark;
 extern crate textwrap;
 
+mod deck;
+mod term;
+pub use deck::Deck;
+
 use std::io::{self, Stdout};
-use std::io::{Read, Result};
-// use termion::color;
-// use termion::style;
-use std::fs::File;
-use std::path::Path;
-
-use pulldown_cmark::{Parser, Event, Tag};
-
-fn read_markdown<P: AsRef<Path>>(path: P) -> Result<String> {
-    let mut f = File::open(path)?;
-    let mut s = String::new();
-    f.read_to_string(&mut s)?;
-    Ok(s)
-}
-
-#[allow(dead_code)]
-enum Element {
-    Title(String),
-    Body(String),
-    Bullets(String),
-    Code(String),
-    Image(String),
-}
-
-fn parse_to_deck(text: &str, deck: &mut Deck) -> Result<()> {
-    // let mut current_tag: Option<Element> = None;
-    let mut content: String = String::new();
-
-    let mut elements: Vec<Tag> = Vec::new();
-
-    let mut parser = Parser::new(text);
-    loop {
-        let event = match parser.next() {
-            None => break,
-            Some(e) => e,
-        };
-
-        println!("{:?}", event);
-
-        match event {
-            Event::Start(tag) => {
-                match tag {
-                    Tag::Rule => {
-                        let offset = parser.get_offset();
-                        let slide = Slide::new(elements.clone(), offset);
-                        elements.clear();
-                        deck.add(slide);
-                    }
-                    _ => {}
-                }
-            }
-            Event::Text(text) => content.push_str(&text),
-            Event::End(_tag) => {}
-            _ => {}
-        }
-    }
-    Ok(())
-}
-
-#[derive(Default)]
-pub struct Deck {
-    slides: Vec<Slide>,
-}
-
-impl Deck {
-    pub fn from_path<P: AsRef<Path>>(path: P) -> Result<Deck> {
-        let content = read_markdown(path)?;
-        let mut deck = Deck::default();
-        parse_to_deck(&content, &mut deck)?;
-        Ok(deck)
-    }
-
-    fn add(&mut self, slide: Slide) {
-        self.slides.push(slide);
-    }
-}
-
-#[allow(dead_code)]
-struct Slide {
-    /// a list of all elements
-    elems: Vec<Element>,
-
-    /// The slide style
-    style: Style,
-
-    /// The offset with respect in the buffer
-    offset: usize,
-}
-
-impl Slide {
-    fn new(_elems: Vec<Tag>, offset: usize) -> Slide {
-        Slide {
-            elems: Vec::new(),
-            style: Style::Title,
-            offset: offset,
-        }
-    }
-}
-
-#[allow(dead_code)]
-enum Style {
-    Title,
-    TitleBody,
-    Body,
-}
-
-// use deck::{Deck, Element, Line, Slide};
-// use pulldown_cmark::{Event, Parser, Tag};
 
 // mod input;
 // mod style;
