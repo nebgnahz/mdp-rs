@@ -14,3 +14,4 @@ textwrap = "0.8"
 [[bin]]
 doc = false
 name = "main"
+path = "src/main.rs"

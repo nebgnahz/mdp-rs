@@ -4,6 +4,12 @@ use style::{code_fill_column, text_fill_column};
 use termion::color;
 use termion::style;
 
+/// Deck holds a vector of slides
+#[derive(Default)]
+pub struct Deck {
+    pub slides: Vec<Slide>,
+}
+
 #[derive(PartialEq, Eq, Clone, Copy)]
 pub enum Element {
     H1,
@@ -78,11 +84,6 @@ impl Slide {
     }
 }
 
-#[derive(Default)]
-pub struct Deck {
-    pub slides: Vec<Slide>,
-    pub current: usize,
-}
 
 impl Deck {
     pub fn add_slide(&mut self, slide: Slide) {
