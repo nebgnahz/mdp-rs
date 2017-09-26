@@ -17,6 +17,7 @@ struct Ctx<'b, I> {
 impl<'a, 'b, I: Iterator<Item = Event<'a>>> Ctx<'b, I> {
     pub fn run(&mut self) -> Result<(), ::std::fmt::Error> {
         while let Some(event) = self.iter.next() {
+            println!("{:?}", event);
             match event {
                 Event::Start(tag) => self.start_tag(tag)?,
                 Event::End(tag) => self.end_tag(tag)?,
@@ -48,18 +49,12 @@ impl<'a, 'b, I: Iterator<Item = Event<'a>>> Ctx<'b, I> {
             Tag::BlockQuote => {
                 write!(self.buf, "{}", style::Italic)?;
             }
-            Tag::CodeBlock(_info) => {
-                write!(self.buf, "{}", color::Bg(color::White))?;
-                write!(self.buf, "{}", color::Fg(color::Black))?;
-            }
+            Tag::CodeBlock(_info) => {}
             Tag::List(_) => {}
             Tag::Item => {}
             Tag::Emphasis => write!(self.buf, "{}", style::Italic)?,
             Tag::Strong => write!(self.buf, "{}", style::Bold)?,
-            Tag::Code => {
-                write!(self.buf, "{}", color::Bg(color::White))?;
-                write!(self.buf, "{}", color::Fg(color::Black))?;
-            }
+            Tag::Code => {}
             Tag::Link(_dest, title) => write!(self.buf, "{}{}", style::Bold, title)?,
             Tag::Image(_dest, title) => write!(self.buf, "{}{}", style::Bold, title)?,
             Tag::FootnoteDefinition(_name) => {}
@@ -93,8 +88,8 @@ impl<'a, 'b, I: Iterator<Item = Event<'a>>> Ctx<'b, I> {
                 self.buf.clear();
             }
             Tag::CodeBlock(_info) => {
-                write!(self.buf, "{}", color::Fg(color::Black))?;
-                write!(self.buf, "{}", color::Bg(color::Reset))?;
+                self.slide.add(Element::Code(self.buf.clone()));
+                self.buf.clear();
             }
             Tag::List(_) => {}
             Tag::Item => {}

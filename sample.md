@@ -1,3 +1,23 @@
+# Slide 3
+
+```
+#include <stdio.h>
+
+int main() {
+    printf("Hello World");
+}
+```
+
+Alternatively, you can create code blocks by indenting four spaces:
+
+    #include <stdio.h>
+    
+    int main() {
+        printf("Hello World");
+    }
+
+------------------
+
 # A command-line based markdown presentation tool.
 
 Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem
@@ -17,16 +37,4 @@ Start by doing what's necessary; then do what's possible; and suddenly you are
 doing the impossible."
 
 --------------------------------------------------------------------------------
-
-# Slide 3
-
-```c
-#include <stdio.h>
-
-int main() {
-    printf(\"Hello World\");
-}
-```
-
-
 

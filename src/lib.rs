@@ -108,6 +108,12 @@ impl Present for String {
     }
 }
 
+impl<'a> Present for &'a str {
+    fn present(&self, view: &mut ViewConfig) -> io::Result<()> {
+        write!(view, "{}", self)
+    }
+}
+
 impl<'a> Present for Cow<'a, str> {
     fn present(&self, view: &mut ViewConfig) -> io::Result<()> {
         write!(view, "{}", self)

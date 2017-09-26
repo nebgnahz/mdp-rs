@@ -1,4 +1,3 @@
-
 use Present;
 use ViewConfig;
 use pulldown_cmark::Parser;
@@ -100,13 +99,28 @@ impl Present for Element {
                 write!(view, "{}{}", style::Reset, color::Fg(color::Reset))?;
             }
             &Element::Paragraph(ref content) => {
-                // calculate the center
                 let cols = view.width() as usize;
                 let lines = textwrap::Wrapper::new(cols).wrap(content);
                 for ref l in lines {
                     view.newline()?;
                     view.present(l)?;
                 }
+            }
+            &Element::Code(ref content) => {
+                let cols = view.width() as usize;
+                write!(view, "{}", color::Bg(color::White))?;
+                write!(view, "{}", color::Fg(color::Black))?;
+                for ref line in content.split('\n') {
+                    view.newline()?;
+                    view.present(line)?;
+
+                    let to_fill = cols - line.len();
+                    let fill = (0..to_fill).map(|_| ' ').collect::<String>();
+                    view.present(&fill)?;
+                    view.present(&"another line")?;
+                }
+                write!(view, "{}", color::Bg(color::Reset))?;
+                write!(view, "{}", color::Fg(color::Reset))?;
             }
             _ => {}
         }
