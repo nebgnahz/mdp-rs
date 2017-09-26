@@ -1,11 +1,13 @@
 use Present;
 use ViewConfig;
 use pulldown_cmark::Parser;
+use std::fmt::{self, Display, Formatter};
 use std::fs::File;
-use std::io::{Read, Result, Write};
+use std::io::{self, Read, Write};
 use std::path::Path;
 use term;
 use termion;
+use termion::{color, style};
 
 #[derive(Default, Debug)]
 pub struct Deck {
@@ -13,7 +15,7 @@ pub struct Deck {
     current: usize,
 }
 
-fn read_markdown<P: AsRef<Path>>(path: P) -> Result<String> {
+fn read_markdown<P: AsRef<Path>>(path: P) -> io::Result<String> {
     let mut f = File::open(path)?;
     let mut s = String::new();
     f.read_to_string(&mut s)?;
@@ -21,7 +23,7 @@ fn read_markdown<P: AsRef<Path>>(path: P) -> Result<String> {
 }
 
 impl Deck {
-    pub fn from_path<P: AsRef<Path>>(path: P) -> Result<Deck> {
+    pub fn from_path<P: AsRef<Path>>(path: P) -> io::Result<Deck> {
         let content = read_markdown(path)?;
         let parser = Parser::new(&content);
         let mut buf = String::new();
@@ -73,14 +75,28 @@ impl Present for Slide {
         for elem in &self.elems {
             match elem {
                 &Element::Title(ref title) => {
-                    // calculate the center
                     let left = view.width() / 2 - title.len() as u16 / 2;
-                    write!(view, "{}", termion::cursor::Goto(left, 1)).unwrap();
-                    write!(view, "{}", title).unwrap();
+                    write!(view, "{}", termion::cursor::Goto(left, 2)).unwrap();
                 }
                 _ => {}
             }
+            write!(view, "{}", elem).unwrap();;
         }
+    }
+}
+
+impl Display for Element {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
+        match self {
+            &Element::Title(ref title) => {
+                // calculate the center
+                write!(f, "{}{}", color::Fg(color::Red), style::Bold)?;
+                write!(f, "{}", title)?;
+                write!(f, "{}{}", style::Reset, color::Fg(color::Reset))?;
+            }
+            _ => {}
+        }
+        Ok(())
     }
 }
 

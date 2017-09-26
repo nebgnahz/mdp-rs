@@ -1,4 +1,5 @@
 //! Terminal renderer that takes an iterator of events as input.
+
 use super::deck::{Deck, Element, Slide};
 
 use pulldown_cmark::{Event, Tag};
@@ -20,8 +21,10 @@ impl<'a, 'b, I: Iterator<Item = Event<'a>>> Ctx<'b, I> {
                 Event::Start(tag) => self.start_tag(tag)?,
                 Event::End(tag) => self.end_tag(tag)?,
                 Event::Text(text) => self.buf.push_str(&text.into_owned()),
-                Event::Html(html) |
-                Event::InlineHtml(html) => self.buf.push_str(&html),
+                Event::Html(_html) |
+                Event::InlineHtml(_html) => {
+                    unimplemented!{}
+                }
                 Event::SoftBreak => self.buf.push('\n'),
                 Event::HardBreak => self.buf.push_str("\n\n\n"),
                 Event::FootnoteReference(_name) => {}
@@ -37,9 +40,7 @@ impl<'a, 'b, I: Iterator<Item = Event<'a>>> Ctx<'b, I> {
         match tag {
             Tag::Paragraph => {}
             Tag::Rule => {}
-            Tag::Header(_level) => {
-                write!(self.buf, "{}{}", color::Fg(color::Red), style::Bold)?;
-            }
+            Tag::Header(_level) => {}
             Tag::Table(_alignments) => {}
             Tag::TableHead => {}
             Tag::TableRow => {}
@@ -78,7 +79,7 @@ impl<'a, 'b, I: Iterator<Item = Event<'a>>> Ctx<'b, I> {
                 self.slide.clear();
             }
             Tag::Header(_level) => {
-                write!(self.buf, "{}{}", style::Reset, color::Fg(color::Reset))?;
+                // write!(self.buf, "{}{}", style::Reset, color::Fg(color::Reset))?;
                 self.slide.add(Element::Title(self.buf.clone()));
                 self.buf.clear();
             }

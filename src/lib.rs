@@ -61,28 +61,3 @@ impl Write for ViewConfig {
         self.stdout.flush()
     }
 }
-
-// impl Present for Slide {
-//     fn present(&self, view: &mut ViewConfig) {
-//         match self {
-//             &Slide::Title(ref title) => {
-//                 // move to center
-//                 let left = (view.term_width - title.len() as u16) / 2;
-//                 termion::cursor::Goto(left, 0);
-//                 write!(
-//                     &mut view.stdout,
-//                     "{}{}{}{}{}",
-//                     color::Fg(color::Red),
-//                     style::Bold,
-//                     title,
-//                     style::Reset,
-//                     color::Fg(color::Reset)
-//                 );
-//             }
-//             &Slide::TitleBody(ref _title, ref body) => {
-//                 let _lines = textwrap::fill(&body, view.width);
-//             }
-//             &Slide::Body(ref _body) => {}
-//         }
-//     }
-// }
