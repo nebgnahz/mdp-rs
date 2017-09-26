@@ -21,7 +21,9 @@ fn main() {
 }
 
 fn run(opt: Opt) -> Result<()> {
-    let _deck = mdp::Deck::from_path(opt.file);
+    let deck = mdp::Deck::from_path(opt.file)?;
+    // println!("{:?}", deck);
+    mdp::display(deck).unwrap();
     // let deck = mdp::deck::demo();
     // let deck = mdp::markdown::parse_document(&s);
     // mdp::viewer::display(deck).unwrap();

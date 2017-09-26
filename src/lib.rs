@@ -1,20 +1,22 @@
 extern crate termion;
-// extern crate termios;
+extern crate termios;
 extern crate pulldown_cmark;
-extern crate textwrap;
+// extern crate textwrap;
 
 mod deck;
 mod term;
 pub use deck::Deck;
+pub use viewer::display;
+mod viewer;
+mod input;
 
-use std::io::{self, Stdout};
+use std::io::{self, Stdout, Write};
 
-// mod input;
 // mod style;
 
 // pub mod markdown;
 // pub mod deck;
-// pub mod viewer;
+
 
 trait Present {
     fn present(&self, view: &mut ViewConfig);
@@ -23,11 +25,10 @@ trait Present {
 #[allow(dead_code)]
 struct ViewConfig {
     term_width: u16,
-    _term_height: u16,
+    pub term_height: u16,
     stdout: Stdout,
 
-    width: usize,
-    _height: usize,
+    width: u16,
 }
 
 impl ViewConfig {
@@ -36,12 +37,28 @@ impl ViewConfig {
         let (width, height) = termion::terminal_size()?;
         Ok(ViewConfig {
             term_width: width,
-            _term_height: height,
+            term_height: height,
             stdout: io::stdout(),
 
             width: 80,
-            _height: 60,
         })
+    }
+
+    pub fn _height(&self) -> u16 {
+        self.term_height
+    }
+
+    pub fn width(&self) -> u16 {
+        self.width
+    }
+}
+
+impl Write for ViewConfig {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.stdout.write(buf)
+    }
+    fn flush(&mut self) -> io::Result<()> {
+        self.stdout.flush()
     }
 }
 

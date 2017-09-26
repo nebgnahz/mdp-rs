@@ -1,10 +1,10 @@
-//! HTML renderer that takes an iterator of events as input.
+//! Terminal renderer that takes an iterator of events as input.
+use super::deck::{Deck, Element, Slide};
+
+use pulldown_cmark::{Event, Tag};
 use std::fmt::Write;
 use termion::color;
 use termion::style;
-use super::deck::{Slide, Deck};
-
-use pulldown_cmark::{Event, Tag};
 
 struct Ctx<'b, I> {
     iter: I,
@@ -14,12 +14,6 @@ struct Ctx<'b, I> {
 }
 
 impl<'a, 'b, I: Iterator<Item = Event<'a>>> Ctx<'b, I> {
-    fn fresh_line(&mut self) {
-        if !(self.buf.is_empty() || self.buf.ends_with('\n')) {
-            self.buf.push('\n');
-        }
-    }
-
     pub fn run(&mut self) -> Result<(), ::std::fmt::Error> {
         while let Some(event) = self.iter.next() {
             match event {
@@ -33,16 +27,16 @@ impl<'a, 'b, I: Iterator<Item = Event<'a>>> Ctx<'b, I> {
                 Event::FootnoteReference(_name) => {}
             }
         }
+
+        // push the last slide in
+        self.deck.add(self.slide.clone());
         Ok(())
     }
 
     fn start_tag(&mut self, tag: Tag<'a>) -> Result<(), ::std::fmt::Error> {
         match tag {
             Tag::Paragraph => {}
-            Tag::Rule => {
-                self.fresh_line();
-                self.buf.push_str("<hr />\n")
-            }
+            Tag::Rule => {}
             Tag::Header(_level) => {
                 write!(self.buf, "{}{}", color::Fg(color::Red), style::Bold)?;
             }
@@ -74,13 +68,19 @@ impl<'a, 'b, I: Iterator<Item = Event<'a>>> Ctx<'b, I> {
 
     fn end_tag(&mut self, tag: Tag) -> Result<(), ::std::fmt::Error> {
         match tag {
-            Tag::Paragraph => {}
+            Tag::Paragraph => {
+                // add this element to slide
+                self.slide.add(Element::Paragraph(self.buf.clone()));
+                self.buf.clear()
+            }
             Tag::Rule => {
                 self.deck.add(self.slide.clone());
                 self.slide.clear();
             }
             Tag::Header(_level) => {
                 write!(self.buf, "{}{}", style::Reset, color::Fg(color::Reset))?;
+                self.slide.add(Element::Title(self.buf.clone()));
+                self.buf.clear();
             }
             Tag::Table(_alignments) => {}
             Tag::TableHead => {}
@@ -88,6 +88,8 @@ impl<'a, 'b, I: Iterator<Item = Event<'a>>> Ctx<'b, I> {
             Tag::TableCell => {}
             Tag::BlockQuote => {
                 write!(self.buf, "{}", style::Reset)?;
+                self.slide.add(Element::Quote(self.buf.clone()));
+                self.buf.clear();
             }
             Tag::CodeBlock(_info) => {
                 write!(self.buf, "{}", color::Fg(color::Black))?;
@@ -100,6 +102,8 @@ impl<'a, 'b, I: Iterator<Item = Event<'a>>> Ctx<'b, I> {
             Tag::Code => {
                 write!(self.buf, "{}", color::Fg(color::Reset))?;
                 write!(self.buf, "{}", color::Bg(color::Reset))?;
+                self.slide.add(Element::Code(self.buf.clone()));
+                self.buf.clear();
             }
             Tag::Link(_dest, _title) => write!(self.buf, "{}", style::Reset)?,
             Tag::Image(_dest, _title) => write!(self.buf, "{}", style::Reset)?,
@@ -109,34 +113,10 @@ impl<'a, 'b, I: Iterator<Item = Event<'a>>> Ctx<'b, I> {
     }
 }
 
-/// Iterate over an `Iterator` of `Event`s, generate HTML for each `Event`, and
-/// push it to a `String`.
-///
-/// # Examples
-///
-/// ```
-/// use pulldown_cmark::{html, Parser};
-///
-/// let markdown_str = r#"
-/// hello
-/// =====
-///
-/// * alpha
-/// * beta
-/// "#;
-/// let parser = Parser::new(markdown_str);
-///
-/// let mut html_buf = String::new();
-/// html::push_html(&mut html_buf, parser);
-///
-/// assert_eq!(html_buf, r#"<h1>hello</h1>
-/// <ul>
-/// <li>alpha</li>
-/// <li>beta</li>
-/// </ul>
-/// "#);
-/// ```
-pub fn terminalize<'a, I: Iterator<Item = Event<'a>>>(buf: &mut String, iter: I) -> Deck {
+pub fn terminalize<'a, I>(buf: &mut String, iter: I) -> Deck
+where
+    I: Iterator<Item = Event<'a>>,
+{
     let mut ctx = Ctx {
         iter: iter,
         buf: buf,
