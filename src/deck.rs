@@ -6,38 +6,30 @@ use pulldown_cmark::Event::{FootnoteReference, HardBreak, SoftBreak};
 
 use split;
 use std::borrow::Cow;
-use std::io::{self, Write};
-use termion::{color, style};
-use textwrap;
+use std::io;
 
 #[derive(Default, Debug)]
-pub struct Deck {
-    slides: Vec<Slide>,
+pub struct Deck<'a> {
+    slides: Vec<Slide<'a>>,
     current: usize,
 }
 
 #[derive(Default, Debug)]
-pub struct Deck2<'a> {
-    slides: Vec<Slide2<'a>>,
-    current: usize,
-}
-
-#[derive(Default, Debug)]
-pub struct Slide2<'a> {
+pub struct Slide<'a> {
     content: Cow<'a, str>,
     offset: usize,
 }
 
-impl<'a> Slide2<'a> {
+impl<'a> Slide<'a> {
     pub fn new(offset: usize, content: Cow<'a, str>) -> Self {
-        Slide2 {
+        Slide {
             content: content,
             offset: offset,
         }
     }
 }
 
-impl<'a> Present for Slide2<'a> {
+impl<'a> Present for Slide<'a> {
     fn present(&self, view: &mut ViewConfig) -> io::Result<()> {
         let parser = Parser::new(&self.content);
         for element in parser {
@@ -79,21 +71,21 @@ impl<'a> Present for Event<'a> {
     }
 }
 
-impl<'a> Deck2<'a> {
-    pub fn new(content: &'a str) -> io::Result<Deck2<'a>> {
+impl<'a> Deck<'a> {
+    pub fn new(content: &'a str) -> io::Result<Deck<'a>> {
         let slides = split::split(content)
-            .map(|s| Slide2::new(s.0, s.1))
+            .map(|s| Slide::new(s.0, s.1))
             .collect::<Vec<_>>();
 
-        let deck2 = Deck2 {
+        let deck = Deck {
             slides: slides,
             current: 0,
         };
 
-        Ok(deck2)
+        Ok(deck)
     }
 
-    pub fn add(&mut self, slide: Slide2<'a>) {
+    pub fn add(&mut self, slide: Slide<'a>) {
         self.slides.push(slide);
     }
 
@@ -109,7 +101,7 @@ impl<'a> Deck2<'a> {
         }
     }
 
-    pub fn slide(&self) -> &'a Slide2 {
+    pub fn slide(&self) -> &'a Slide {
         &self.slides[self.current]
     }
 
@@ -119,87 +111,5 @@ impl<'a> Deck2<'a> {
 
     pub fn total_num(&self) -> usize {
         self.slides.len()
-    }
-}
-
-#[derive(Debug, PartialEq, Eq, Clone)]
-pub enum Element {
-    Title(String),
-    Paragraph(String),
-    Quote(String),
-    Code(String),
-}
-
-#[derive(Default, Clone, Debug)]
-pub struct Slide {
-    /// a list of all elements
-    elems: Vec<Element>,
-}
-
-impl Present for Slide {
-    fn present(&self, view: &mut ViewConfig) -> io::Result<()> {
-        for elem in &self.elems {
-            match elem {
-                &Element::Title(ref _title) => {
-                    // let left = view.width() / 2 - title.len() as u16 / 2;
-                    // write!(view, "{}", termion::cursor::Goto(left, 2))?;
-                }
-                _ => {}
-            }
-            view.present(elem)?;
-            view.newline()?;
-        }
-        Ok(())
-    }
-}
-
-impl Present for Element {
-    fn present(&self, view: &mut ViewConfig) -> io::Result<()> {
-        match self {
-            &Element::Title(ref title) => {
-                write!(view, "{}{}", color::Fg(color::Red), style::Bold)?;
-                write!(view, "{}", title)?;
-                write!(view, "{}{}", style::Reset, color::Fg(color::Reset))?;
-            }
-            &Element::Paragraph(ref content) => {
-                let cols = view.width() as usize;
-                let lines = textwrap::Wrapper::new(cols).wrap(content);
-                for ref l in lines {
-                    view.newline()?;
-                    view.present(l)?;
-                }
-            }
-            &Element::Code(ref content) => {
-                let cols = view.width() as usize;
-                write!(view, "{}", color::Bg(color::White))?;
-                write!(view, "{}", color::Fg(color::Black))?;
-                let content = content.trim_right_matches('\n');
-                for ref line in content.split('\n') {
-                    view.newline()?;
-                    view.present(line)?;
-
-                    let to_fill = cols - line.len();
-                    let fill = (0..to_fill).map(|_| ' ').collect::<String>();
-                    view.present(&fill)?;
-                }
-                write!(view, "{}", color::Bg(color::Reset))?;
-                write!(view, "{}", color::Fg(color::Reset))?;
-            }
-            &Element::Quote(ref content) => {
-                let cols = view.width() as usize;
-                let lines = textwrap::Wrapper::new(cols).wrap(content);
-                for ref line in lines {
-                    view.newline()?;
-                    write!(view, "{}", color::Bg(color::White))?;
-                    write!(view, " ")?;
-                    write!(view, "{}", color::Bg(color::Reset))?;
-                    write!(view, " ")?;
-                    view.present(line)?;
-                }
-                write!(view, "{}", color::Bg(color::Reset))?;
-                write!(view, "{}", color::Fg(color::Reset))?;
-            }
-        }
-        Ok(())
     }
 }

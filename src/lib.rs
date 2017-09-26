@@ -1,16 +1,13 @@
-#![allow(dead_code)]
-
 #[macro_use]
 extern crate log;
 extern crate termion;
 extern crate termios;
 extern crate pulldown_cmark;
-extern crate textwrap;
 
 mod deck;
 //mod term;
 
-pub use deck::Deck2;
+pub use deck::Deck;
 pub use viewer::display;
 mod viewer;
 mod input;
@@ -45,7 +42,7 @@ struct ViewConfig {
 #[derive(Debug)]
 enum Context {
     Default,
-    Paragraph,
+    _Paragraph,
     CodeBlock,
 }
 
@@ -110,7 +107,7 @@ impl ViewConfig {
     pub fn show_text<'a>(&mut self, text: &Cow<'a, str>) -> io::Result<()> {
         match self.ctx {
             Context::Default => self.present(text),
-            Context::Paragraph => self.present(text),
+            Context::_Paragraph => self.present(text),
             Context::CodeBlock => {
                 self.newline()?;
                 let content = text.trim_right_matches('\n');
@@ -190,14 +187,6 @@ impl ViewConfig {
             color::Fg(color::Reset),
         )?;
         self.newline()
-    }
-
-    pub fn start_white(&mut self) -> io::Result<()> {
-        write!(self, "{}", color::Fg(color::LightWhite))
-    }
-
-    pub fn end_white(&mut self) -> io::Result<()> {
-        write!(self, "{}", color::Fg(color::Reset))
     }
 }
 

@@ -25,12 +25,7 @@ fn run(opt: Opt) -> Result<()> {
     let mut s = String::new();
     f.read_to_string(&mut s)?;
 
-    let deck = mdp::Deck2::new(&s)?;
-    // println!("{:?}", deck);
+    let deck = mdp::Deck::new(&s)?;
     mdp::display(deck).unwrap();
-
-    // let deck = mdp::deck::demo();
-    // let deck = mdp::markdown::parse_document(&s);
-    // mdp::viewer::display(deck).unwrap();
     Ok(())
 }
