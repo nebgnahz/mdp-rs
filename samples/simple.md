@@ -1,3 +1,9 @@
+### Images (only on iTerm2)
+
+![Helix](helix.jpg)
+
+------------------
+
 # A Markdown Presentation Tool
 
 Ben Zhang

@@ -7,6 +7,7 @@ extern crate structopt_derive;
 use std::io::{Read, Result};
 use std::string::String;
 use structopt::StructOpt;
+use std::path::Path;
 
 #[derive(StructOpt, Debug)]
 #[structopt(name = "mdp", about = "A markdown presentation tool in Rust.")]
@@ -23,11 +24,15 @@ fn main() {
 }
 
 fn run(opt: Opt) -> Result<()> {
-    let mut f = ::std::fs::File::open(opt.file)?;
+    let content = file_to_string(opt.file)?;
+    let deck = mdp::Deck::new(&content)?;
+
+    mdp::display(deck)
+}
+
+fn file_to_string<P: AsRef<Path>>(p: P) -> Result<String> {
+    let mut f = ::std::fs::File::open(p)?;
     let mut s = String::new();
     f.read_to_string(&mut s)?;
-
-    let deck = mdp::Deck::new(&s)?;
-    mdp::display(deck).unwrap();
-    Ok(())
+    Ok(s)
 }

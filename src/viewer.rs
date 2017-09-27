@@ -1,15 +1,16 @@
-use view::View;
+
 use deck::{Deck, Slide};
 use input::ImmediateInput;
 use std::borrow::Cow;
-use std::io;
+use std::io::Result;
 use std::io::Write;
 use std::io::stdin;
 use termion::{color, cursor};
 use termion::event::Key;
 use termion::input::TermRead;
+use view::View;
 
-fn show_help(view: &mut View) -> io::Result<()> {
+fn _show_help(view: &mut View) -> Result<()> {
     let help = r#"
 # mdp: a markdown presentation tool built in Rust
 
@@ -28,14 +29,19 @@ fn show_help(view: &mut View) -> io::Result<()> {
     view.info()
 }
 
-pub fn display(mut deck: Deck) -> io::Result<()> {
+pub fn display(mut deck: Deck) -> Result<()> {
     let mut view = View::new()?;
     let mut key_reader = stdin().keys();
 
     let input = ImmediateInput::new(0);
     input.set_immediate();
 
-    show_help(&mut view)?;
+    // show_help(&mut view)?;
+    view.clear()?;
+    view.present(deck.slide())?;
+    show_page_num(&deck, &mut view)?;
+    view.hide_cursor()?;
+    view.flush()?;
 
     loop {
         while let Some(c) = key_reader.next() {
@@ -65,7 +71,7 @@ pub fn display(mut deck: Deck) -> io::Result<()> {
     }
 }
 
-fn show_page_num<'a>(deck: &'a Deck, view: &mut View) -> io::Result<()> {
+fn show_page_num<'a>(deck: &'a Deck, view: &mut View) -> Result<()> {
     use std::fmt::Write;
     let mut s = String::new();
     write!(&mut s, "{} / {}", deck.current_num() + 1, deck.total_num()).unwrap();

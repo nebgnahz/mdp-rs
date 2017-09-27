@@ -4,6 +4,7 @@ version = "0.0.1"
 authors = ["Ben Zhang <benzh@cs.berkeley.edu>"]
 
 [dependencies]
+base64 = "0.7.0"
 env_logger = "*"
 log = "*"
 pulldown-cmark = "0.0.8"
