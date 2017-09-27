@@ -1,5 +1,6 @@
 //! Split a full markdown file into each slides
 
+use image::retrieve_image;
 use pulldown_cmark::{Event, Parser, Tag};
 use std::borrow::Cow;
 
@@ -45,6 +46,11 @@ impl<'a> Iterator for Split<'a> {
                         error!("Surprising markdown file/parser for Tag::Rule");
                         ::std::process::exit(-1);
                     }
+                }
+                Event::Start(Tag::Image(path, _)) => {
+                    let path = String::from(path);
+                    retrieve_image(path);
+                    // ::std::thread::spawn(move || {  });
                 }
                 _ => {}
             }

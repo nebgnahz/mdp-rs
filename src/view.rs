@@ -309,7 +309,7 @@ impl View {
 
     pub fn start_image<'a>(&mut self, path: &Cow<'a, str>) -> Result<()> {
         let path = path.clone().into_owned();
-        match inline_image(self, path) {
+        match inline_image(self, &path) {
             Ok(()) => self.ctx = Context::Image(true),
             Err(_) => self.ctx = Context::Image(false),
         }

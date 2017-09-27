@@ -4,11 +4,12 @@
 /// ESC ] 1337 ; File = [optional arguments] : base-64 encoded file contents ^G
 /// ```
 use base64::encode;
-
+use reqwest;
+use std::collections::HashMap;
 use std::env::var;
 use std::fs::File;
-use std::path::Path;
-use std::io::{Read, Result, Write};
+use std::io::{Error, ErrorKind, Read, Result, Write};
+use std::sync::Mutex;
 
 fn support_image() -> bool {
     match var("TERM_PROGRAM") {
@@ -26,22 +27,62 @@ fn print_st<W: Write>(buf: &mut W) -> Result<()> {
     write!(buf, "{}", char::from(7))
 }
 
-pub fn inline_image<W: Write, P: AsRef<Path>>(buf: &mut W, path: P) -> Result<()> {
+lazy_static! {
+    static ref IMAGE_STORE: Mutex<HashMap<String, String>> = {
+        Mutex::new(HashMap::new())
+    };
+}
+
+pub fn inline_image<W>(buf: &mut W, name: &str) -> Result<()>
+where
+    W: Write,
+{
     if !support_image() {
-        ::std::process::exit(-1);
+        return Err(Error::new(ErrorKind::Other, "inline image not supported"));
     }
 
-    let mut file = File::open(path)?;
-    let mut contents = Vec::new();
-    file.read_to_end(&mut contents)?;
+    let store = IMAGE_STORE.lock().unwrap();
+    let image = match store.get(name) {
+        Some(image) => image,
+        None => return Err(Error::new(ErrorKind::Other, "image not found")),
+    };
 
     print_osc(buf)?;
     write!(buf, "1337;File=")?;
-    // print all optional arguments, such as size?
-    write!(buf, "inline=1:")?;
+    write!(buf, "inline=1")?;
 
-    write!(buf, "{}", encode(&contents))?;
+    // TODO(benzh) print other optional arguments, such as size?
+    write!(buf, ":")?;
+    write!(buf, "{}", image)?;
     print_st(buf)?;
     write!(buf, "\n")?;
     Ok(())
+}
+
+pub fn retrieve_image(path: String) {
+    let mut contents = Vec::new();
+    println!("path {}", path);
+    match reqwest::Url::parse(&path) {
+        Ok(url) => {
+            println!("url {}", url);
+
+            if let Err(_) = reqwest::get(url)
+                .map_err(|_e| Error::new(ErrorKind::NotConnected, "reqwest"))
+                .and_then(|mut r| r.read_to_end(&mut contents))
+            {
+                return;
+            }
+        }
+        Err(_) => {
+            let r = File::open(&path).and_then(|mut r| r.read_to_end(&mut contents));
+            if let Err(_) = r {
+                return;
+            }
+        }
+    }
+
+    let base64 = encode(&contents);
+    let mut store = IMAGE_STORE.lock().unwrap();
+    println!("inserting {}", path);
+    store.insert(path, base64);
 }
