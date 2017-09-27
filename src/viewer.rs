@@ -33,7 +33,8 @@ fn show_help(view: &mut ViewConfig) -> io::Result<()> {
 pub fn display(mut deck: Deck) -> io::Result<()> {
     let mut view = ViewConfig::new()?;
     let mut key_reader = stdin().keys();
-    let signal = chan_signal::notify(&[Signal::INT, Signal::TERM]);
+    let signals = [Signal::INT, Signal::TSTP, Signal::TERM, Signal::CONT];
+    let signal = chan_signal::notify(&signals);
 
     let input = ImmediateInput::new(0);
     input.set_immediate();
@@ -50,10 +51,13 @@ pub fn display(mut deck: Deck) -> io::Result<()> {
     });
 
     // Wait for a signal or for work to be done.
+    let mut counter = 1;
     loop {
         chan_select! {
             signal.recv() -> signal => {
                 let signal = signal.unwrap();
+                println!("{:?}x{}", signal, counter);
+                counter +=1;
                 match signal {
                     Signal::INT | Signal::TERM => {
                         view.quit()?;
@@ -61,10 +65,16 @@ pub fn display(mut deck: Deck) -> io::Result<()> {
                     }
                     Signal::TSTP => {
                         view.quit()?;
+                        println!("{:?}", signal);
+                        chan_signal::kill_this(Signal::STOP);
                     }
                     Signal::CONT => {
                         input.set_immediate();
-                        view.update()?;
+                        view.clear()?;
+                        view.present(deck.slide())?;
+                        show_page_num(&deck, &mut view)?;
+                        view.hide_cursor()?;
+                        view.flush()?;
                     }
                     _ => {
                         unreachable!{}
