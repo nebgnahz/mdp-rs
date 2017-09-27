@@ -1,3 +1,4 @@
+use image::inline_image;
 use present::Present;
 use std::borrow::Cow;
 use std::cmp::min;
@@ -25,6 +26,10 @@ enum Context {
     Quote,
     _Paragraph,
     CodeBlock(usize),
+
+    /// Whether we have the image successfully loaded or not. This affects
+    /// whether or not we show image titie.
+    Image(bool),
 
     /// List
     List(usize, ListState),
@@ -159,6 +164,8 @@ impl View {
                 }
                 self.present(text)
             }
+            Context::Image(true) => Ok(()),
+            Context::Image(false) => self.present(text),
         }
     }
 
@@ -298,6 +305,20 @@ impl View {
             color::Fg(color::Reset),
         )?;
         self.newline()
+    }
+
+    pub fn start_image<'a>(&mut self, path: &Cow<'a, str>) -> Result<()> {
+        let path = path.clone().into_owned();
+        match inline_image(self, &path) {
+            Ok(()) => self.ctx = Context::Image(true),
+            Err(_) => self.ctx = Context::Image(false),
+        }
+        self.newline()
+    }
+
+    pub fn end_image<'a>(&mut self, _path: &Cow<'a, str>) -> Result<()> {
+        self.ctx = Context::Default;
+        Ok(())
     }
 }
 

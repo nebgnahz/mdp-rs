@@ -1,15 +1,14 @@
-use view::View;
 use deck::{Deck, Slide};
 use input::ImmediateInput;
 use std::borrow::Cow;
-use std::io;
-use std::io::Write;
-use std::io::stdin;
+use std::io::{Read, Result, Write, stdin};
+use std::path::Path;
 use termion::{color, cursor};
 use termion::event::Key;
 use termion::input::TermRead;
+use view::View;
 
-fn show_help(view: &mut View) -> io::Result<()> {
+fn _show_help(view: &mut View) -> Result<()> {
     let help = r#"
 # mdp: a markdown presentation tool built in Rust
 
@@ -28,14 +27,37 @@ fn show_help(view: &mut View) -> io::Result<()> {
     view.info()
 }
 
-pub fn display(mut deck: Deck) -> io::Result<()> {
-    let mut view = View::new()?;
-    let mut key_reader = stdin().keys();
+fn file_to_string<P: AsRef<Path>>(p: P) -> Result<String> {
+    let mut f = ::std::fs::File::open(p)?;
+    let mut s = String::new();
+    f.read_to_string(&mut s)?;
+    Ok(s)
+}
 
+pub fn play<P: AsRef<Path>>(path: P) -> Result<()> {
+    let mut view = View::new()?;
     let input = ImmediateInput::new(0);
     input.set_immediate();
 
-    show_help(&mut view)?;
+    loop {
+        let content = file_to_string(&path)?;
+        let deck = Deck::new(&content)?;
+        show(deck, &mut view, 0)?;
+        break;
+        // if file changes, reload, otherwise, we won't be here.
+    }
+    Ok(())
+}
+
+fn show(mut deck: Deck, view: &mut View, start: usize) -> Result<()> {
+    let mut key_reader = stdin().keys();
+
+    deck.goto(start);
+    view.clear()?;
+    view.present(deck.slide())?;
+    show_page_num(&deck, view)?;
+    view.hide_cursor()?;
+    view.flush()?;
 
     loop {
         while let Some(c) = key_reader.next() {
@@ -58,14 +80,16 @@ pub fn display(mut deck: Deck) -> io::Result<()> {
 
             view.clear()?;
             view.present(deck.slide())?;
-            show_page_num(&deck, &mut view)?;
+            show_page_num(&deck, view)?;
             view.hide_cursor()?;
             view.flush()?;
         }
     }
+
 }
 
-fn show_page_num<'a>(deck: &'a Deck, view: &mut View) -> io::Result<()> {
+
+fn show_page_num<'a>(deck: &'a Deck, view: &mut View) -> Result<()> {
     use std::fmt::Write;
     let mut s = String::new();
     write!(&mut s, "{} / {}", deck.current_num() + 1, deck.total_num()).unwrap();

@@ -1,5 +1,6 @@
 //! Split a full markdown file into each slides
 
+use image::retrieve_image;
 use pulldown_cmark::{Event, Parser, Tag};
 use std::borrow::Cow;
 
@@ -8,6 +9,8 @@ pub struct Split<'a> {
     parser: Parser<'a>,
     start_offset: usize,
     end_offset: usize,
+
+    first_page: bool,
 }
 
 impl<'a> Split<'a> {}
@@ -39,11 +42,24 @@ impl<'a> Iterator for Split<'a> {
                         let content = Cow::from(s);
                         let ret = (self.start_offset, content);
                         self.start_offset = self.parser.get_offset();
+
+                        // One page ready
+                        self.first_page = false;
                         return Some(ret);
                     } else {
                         // Tag mismatch, error
                         error!("Surprising markdown file/parser for Tag::Rule");
                         ::std::process::exit(-1);
+                    }
+                }
+                Event::Start(Tag::Image(path, _)) => {
+                    let path = String::from(path);
+                    if self.first_page {
+                        // synchronous read for first page
+                        retrieve_image(path);
+                    } else {
+                        // asynchronous read for the rest of the slides
+                        ::std::thread::spawn(move || retrieve_image(path));
                     }
                 }
                 _ => {}
@@ -59,5 +75,6 @@ pub fn split<'a>(buf: &'a str) -> Split<'a> {
         parser: Parser::new(buf),
         start_offset: 0,
         end_offset: 0,
+        first_page: true,
     }
 }

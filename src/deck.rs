@@ -59,6 +59,12 @@ impl<'a> Deck<'a> {
         &self.slides[self.current]
     }
 
+    pub fn goto(&mut self, n: usize) {
+        if n < self.slides.len() - 1 {
+            self.current = n;
+        }
+    }
+
     pub fn current_num(&self) -> usize {
         self.current
     }

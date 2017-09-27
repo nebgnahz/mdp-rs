@@ -1,3 +1,20 @@
+### Images (only on iTerm2)
+
+You can inline images `![campanile](campanile.jpg)`.
+
+![campanile](https://www.benzhang.name/images/campanile-sketch.JPG)
+
+Never just an ivory tower, or a monument, the Campanile is a trusty landmark, a
+familiar friend, a treasure trove of history, a music box, a guardian, a solace
+and a thing of great beauty. But most of all, it is a symbol of the university’s
+lofty vision and enduring contribution to California and the world.
+
+If the file is not present, we show the title, e.g. `![404](404.jpg)`.
+
+![404](404.jpg)
+
+------------------
+
 # A Markdown Presentation Tool
 
 Ben Zhang
