@@ -7,6 +7,7 @@ use base64::encode;
 
 use std::env::var;
 use std::fs::File;
+use std::path::Path;
 use std::io::{Read, Result, Write};
 
 fn support_image() -> bool {
@@ -25,19 +26,19 @@ fn print_st<W: Write>(buf: &mut W) -> Result<()> {
     write!(buf, "{}", char::from(7))
 }
 
-pub fn inline_image<W: Write>(buf: &mut W, path: &str) -> Result<()> {
+pub fn inline_image<W: Write, P: AsRef<Path>>(buf: &mut W, path: P) -> Result<()> {
     if !support_image() {
         ::std::process::exit(-1);
     }
+
+    let mut file = File::open(path)?;
+    let mut contents = Vec::new();
+    file.read_to_end(&mut contents)?;
 
     print_osc(buf)?;
     write!(buf, "1337;File=")?;
     // print all optional arguments, such as size?
     write!(buf, "inline=1:")?;
-
-    let mut file = File::open(path)?;
-    let mut contents = Vec::new();
-    file.read_to_end(&mut contents)?;
 
     write!(buf, "{}", encode(&contents))?;
     print_st(buf)?;

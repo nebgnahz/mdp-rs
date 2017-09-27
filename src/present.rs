@@ -48,6 +48,8 @@ impl<'a> Present for Event<'a> {
             &End(Tag::List(_)) => view.end_list(),
             &Start(Tag::Item) => view.start_item(),
             &End(Tag::Item) => view.end_item(),
+            &Start(Tag::Image(ref path, _)) => view.start_image(&path),
+            &End(Tag::Image(ref path, _)) => view.end_image(&path),
             &Start(_) => Ok(()),
             &End(_) => Ok(()),
             &Text(ref text) => view.show_text(text),

@@ -1,6 +1,13 @@
 ### Images (only on iTerm2)
 
-![Helix](helix.jpg)
+You can inline images `![campanile](campanile.jpg)`.
+
+![campanile](campanile.jpg)
+
+Never just an ivory tower, or a monument, the Campanile is a trusty landmark, a
+familiar friend, a treasure trove of history, a music box, a guardian, a solace
+and a thing of great beauty. But most of all, it is a symbol of the university’s
+lofty vision and enduring contribution to California and the world.
 
 ------------------
 
