@@ -14,7 +14,6 @@ structopt = "0.1.0"
 structopt-derive = "0.1.0"
 termion = "1.1.1"
 termios = "0.2.2"
-textwrap = "0.8"
 
 [[bin]]
 name = "mdp"
