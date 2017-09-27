@@ -19,4 +19,4 @@ mod image;
 pub use deck::Deck;
 pub use image::inline_image;
 pub use present::Present;
-pub use viewer::display;
+pub use viewer::play;
