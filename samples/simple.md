@@ -2,7 +2,7 @@
 
 You can inline images `![campanile](campanile.jpg)`.
 
-![campanile](campanile.jpg "Campanile")
+![campanile](https://www.benzhang.name/images/campanile-sketch.JPG)
 
 Never just an ivory tower, or a monument, the Campanile is a trusty landmark, a
 familiar friend, a treasure trove of history, a music box, a guardian, a solace

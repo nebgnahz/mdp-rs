@@ -61,11 +61,8 @@ where
 
 pub fn retrieve_image(path: String) {
     let mut contents = Vec::new();
-    println!("path {}", path);
     match reqwest::Url::parse(&path) {
         Ok(url) => {
-            println!("url {}", url);
-
             if let Err(_) = reqwest::get(url)
                 .map_err(|_e| Error::new(ErrorKind::NotConnected, "reqwest"))
                 .and_then(|mut r| r.read_to_end(&mut contents))
