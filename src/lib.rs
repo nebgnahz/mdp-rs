@@ -42,8 +42,9 @@ struct ViewConfig {
 #[derive(Debug)]
 enum Context {
     Default,
+    Quote,
     _Paragraph,
-    CodeBlock,
+    CodeBlock(usize),
 }
 
 impl ViewConfig {
@@ -108,17 +109,32 @@ impl ViewConfig {
         match self.ctx {
             Context::Default => self.present(text),
             Context::_Paragraph => self.present(text),
-            Context::CodeBlock => {
-                self.newline()?;
-                let content = text.trim_right_matches('\n');
+            Context::CodeBlock(i) => {
+                if text.ends_with("\n") {
+                    let content = text.trim_right_matches('\n');
 
-                let cols = self.width() as usize;
-                let to_fill = cols - content.len();
+                    let cols = self.width() as usize;
+                    let to_fill = cols - content.len() - i;
+                    let fill = (0..to_fill).map(|_| ' ').collect::<String>();
 
-                self.present(&content)?;
-
-                let fill = (0..to_fill).map(|_| ' ').collect::<String>();
-                self.present(&fill)
+                    self.present(&content)?;
+                    self.present(&fill)?;
+                    self.newline()?;
+                    self.ctx = Context::CodeBlock(0);
+                } else {
+                    self.present(text)?;
+                    self.ctx = Context::CodeBlock(i + text.len());
+                }
+                Ok(())
+            }
+            Context::Quote => {
+                write!(
+                    self,
+                    "{} {} ",
+                    color::Bg(color::LightWhite),
+                    color::Bg(color::Reset)
+                )?;
+                self.present(text)
             }
         }
     }
@@ -127,8 +143,12 @@ impl ViewConfig {
         write!(self, "{}", cursor::Hide)
     }
 
+    pub fn show_cursor(&mut self) -> io::Result<()> {
+        write!(self, "{}", cursor::Show)
+    }
+
     pub fn start_code(&mut self) -> io::Result<()> {
-        write!(self, "{}", color::Bg(color::White))?;
+        write!(self, "{}", color::Bg(color::LightWhite))?;
         write!(self, "{}", color::Fg(color::Black))
     }
 
@@ -138,7 +158,7 @@ impl ViewConfig {
     }
 
     pub fn start_codeblock(&mut self) -> io::Result<()> {
-        self.ctx = Context::CodeBlock;
+        self.ctx = Context::CodeBlock(0);
         write!(self, "{}", color::Bg(color::LightWhite))?;
         write!(self, "{}", color::Fg(color::Black))
     }
@@ -163,7 +183,7 @@ impl ViewConfig {
     }
 
     pub fn end_bold(&mut self) -> io::Result<()> {
-        write!(self, "{}", style::NoBold)
+        write!(self, "{}", style::Reset)
     }
 
     pub fn start_paragraph(&mut self) -> io::Result<()> {
@@ -171,6 +191,16 @@ impl ViewConfig {
     }
 
     pub fn end_paragraph(&mut self) -> io::Result<()> {
+        self.newline()
+    }
+
+    pub fn start_quote(&mut self) -> io::Result<()> {
+        self.ctx = Context::Quote;
+        self.newline()
+    }
+
+    pub fn end_quote(&mut self) -> io::Result<()> {
+        self.ctx = Context::Default;
         self.newline()
     }
 

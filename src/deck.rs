@@ -21,7 +21,7 @@ pub struct Slide<'a> {
 }
 
 impl<'a> Slide<'a> {
-    pub fn new(offset: usize, content: Cow<'a, str>) -> Self {
+    pub fn new((offset, content): (usize, Cow<'a, str>)) -> Self {
         Slide {
             content: content,
             offset: offset,
@@ -33,7 +33,7 @@ impl<'a> Present for Slide<'a> {
     fn present(&self, view: &mut ViewConfig) -> io::Result<()> {
         let parser = Parser::new(&self.content);
         for element in parser {
-            println!("{:?}", element);
+            info!("{:?}", element);
         }
 
         let parser = Parser::new(&self.content);
@@ -60,6 +60,8 @@ impl<'a> Present for Event<'a> {
             &End(Tag::CodeBlock(ref _lang)) => view.end_codeblock(),
             &Start(Tag::Paragraph) => view.start_paragraph(),
             &End(Tag::Paragraph) => view.end_paragraph(),
+            &Start(Tag::BlockQuote) => view.start_quote(),
+            &End(Tag::BlockQuote) => view.end_quote(),
             &Start(_) => Ok(()),
             &End(_) => Ok(()),
             &Text(ref text) => view.show_text(text),
@@ -73,9 +75,7 @@ impl<'a> Present for Event<'a> {
 
 impl<'a> Deck<'a> {
     pub fn new(content: &'a str) -> io::Result<Deck<'a>> {
-        let slides = split::split(content)
-            .map(|s| Slide::new(s.0, s.1))
-            .collect::<Vec<_>>();
+        let slides = split::split(content).map(|s| Slide::new(s)).collect();
 
         let deck = Deck {
             slides: slides,

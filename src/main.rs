@@ -1,3 +1,4 @@
+extern crate env_logger;
 extern crate mdp;
 extern crate structopt;
 #[macro_use]
@@ -16,6 +17,7 @@ struct Opt {
 }
 
 fn main() {
+    env_logger::init().unwrap();
     let opt = Opt::from_args();
     run(opt).unwrap();
 }
