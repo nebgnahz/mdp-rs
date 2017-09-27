@@ -36,3 +36,16 @@ int main() {
 You can change text styles, such as `inline code`, *italic*, or **bold**.
 
 -------------
+
+# Support for UTF-8
+
+Here are some examples.
+
+ae = ä, oe = ö, ue = ü, ss = ß
+upsilon = Ʊ, phi = ɸ
+
+▛▀▀▀▀▀▀▀▀▀▜
+▌rectangle▐
+▙▄▄▄▄▄▄▄▄▄▟
+
+你好，世界
