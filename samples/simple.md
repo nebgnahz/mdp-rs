@@ -8,12 +8,18 @@
 # List and Item
 
 * level 1.1, with a very very very very very very very very very long string
-    to the next line
+  to the next line
   * level 2.1, with a very very very very very very very very very long string
     that expands to the next line
   * level 2.2
-    * level 3.1
+    * level 3.1, with a very very very very very very very very very long string
+      that expands to the next line
+      * level 4.1, with a very very very very very very very very very long
+      string that expands to the next line
+      * level 4.2, with a very very very very very very very very very long
+      string that expands to the next line
     * level 3.2
+  * level 2.3
 * Level 1.2
 * Level 1.3
 

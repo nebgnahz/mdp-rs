@@ -41,7 +41,16 @@ enum Context {
     Quote,
     _Paragraph,
     CodeBlock(usize),
-    List(usize, bool),
+
+    /// List
+    List(usize, ListState),
+}
+
+#[derive(Debug, Clone, Copy)]
+enum ListState {
+    FirstRow,
+    Continue,
+    JustEnd,
 }
 
 impl ViewConfig {
@@ -133,15 +142,26 @@ impl ViewConfig {
                 )?;
                 self.present(text)
             }
-            Context::List(i, is_first) => {
-                if is_first {
-                    self.ctx = Context::List(i, false);
-                } else {
-                    write!(self, "|")?;
-                    (0..(i + 1)).map(|_| write!(self, "   ")).count();
+            Context::List(i, list_state) => {
+                match list_state {
+                    ListState::FirstRow => {
+                        self.ctx = Context::List(i, ListState::Continue);
+                    }
+                    ListState::Continue => {
+                        write!(self, "   ")?;
+                        (0..i).map(|_| write!(self, "   ")).count();
+                    }
+                    ListState::JustEnd => {}
                 }
                 self.present(text)
             }
+        }
+    }
+
+    fn list_one_more_line(&mut self) -> Result<()> {
+        match self.ctx {
+            Context::List(_i, _state) => self.newline(),
+            _ => unreachable!{},
         }
     }
 
@@ -214,15 +234,16 @@ impl ViewConfig {
     pub fn start_list(&mut self) -> Result<()> {
         self.newline()?;
         match self.ctx {
-            Context::List(i, _) => {
-                self.ctx = Context::List(i + 1, true);
-            }
             Context::Default => {
                 self.newline()?;
-                self.ctx = Context::List(0, true);
+                self.ctx = Context::List(0, ListState::FirstRow);
             }
-            _ => unimplemented!{},
+            Context::List(i, _) => {
+                self.ctx = Context::List(i + 1, ListState::FirstRow);
+            }
+            _ => unreachable!{},
         }
+        self.list_one_more_line()?;
         Ok(())
     }
 
@@ -231,12 +252,12 @@ impl ViewConfig {
             Context::List(0, _) => {
                 self.ctx = Context::Default;
             }
-            Context::List(i, _) => {
-                self.ctx = Context::List(i - 1, true);
+            Context::List(i, state) => {
+                self.ctx = Context::List(i - 1, state);
             }
             ref ctx => {
                 error!("{:?}", &ctx);
-                unimplemented!{}
+                unreachable!{}
             }
         }
         Ok(())
@@ -246,13 +267,12 @@ impl ViewConfig {
         match self.ctx {
             Context::List(0, _) => {
                 write!(self, "+- ")?;
-                self.ctx = Context::List(0, true);
+                self.ctx = Context::List(0, ListState::FirstRow);
             }
             Context::List(i, _) => {
-                write!(self, "|")?;
                 (0..i).map(|_| write!(self, "   ")).count();
                 write!(self, "+- ")?;
-                self.ctx = Context::List(i, true);
+                self.ctx = Context::List(i, ListState::FirstRow);
             }
             _ => unimplemented!{},
         }
@@ -260,7 +280,17 @@ impl ViewConfig {
     }
 
     pub fn end_item(&mut self) -> Result<()> {
-        self.newline()
+        match self.ctx {
+            Context::List(_level, ListState::JustEnd) => Ok(()),
+            Context::List(level, _) => {
+                self.newline()?;
+                self.ctx = Context::List(level, ListState::JustEnd);
+                self.list_one_more_line()
+            }
+            _ => {
+                unreachable!{}
+            }
+        }
     }
 
     pub fn start_header(&mut self, _level: i32) -> Result<()> {
