@@ -5,9 +5,8 @@ extern crate termios;
 extern crate pulldown_cmark;
 
 mod deck;
-//mod term;
-
 pub use deck::Deck;
+use std::io::Result;
 pub use viewer::display;
 mod viewer;
 mod input;
@@ -17,11 +16,8 @@ use std::borrow::Cow;
 use std::io::{self, Stdout, Write};
 use termion::{color, cursor, style};
 
-// mod style;
-// pub mod markdown;
-
 trait Present {
-    fn present(&self, view: &mut ViewConfig) -> io::Result<()>;
+    fn present(&self, view: &mut ViewConfig) -> Result<()>;
 }
 
 #[derive(Debug)]
@@ -45,10 +41,11 @@ enum Context {
     Quote,
     _Paragraph,
     CodeBlock(usize),
+    List(usize),
 }
 
 impl ViewConfig {
-    pub fn new() -> io::Result<Self> {
+    pub fn new() -> Result<Self> {
         let (term_width, term_height) = termion::terminal_size()?;
         let width = std::cmp::min(80, term_width - 4);
 
@@ -69,7 +66,7 @@ impl ViewConfig {
         Ok(view)
     }
 
-    pub fn clear(&mut self) -> io::Result<()> {
+    pub fn clear(&mut self) -> Result<()> {
         write!(
             self.stdout,
             "{}{}",
@@ -78,16 +75,16 @@ impl ViewConfig {
         )
     }
 
-    pub fn reset(&mut self) -> io::Result<()> {
+    pub fn reset(&mut self) -> Result<()> {
         write!(self.stdout, "{}{}", termion::clear::All, cursor::Goto(1, 1))
     }
 
-    pub fn info(&mut self) -> io::Result<()> {
+    pub fn info(&mut self) -> Result<()> {
         write!(self.stdout, "Your terminal is ")?;
         write!(self.stdout, "{}x{}", self.term_width, self.term_height)
     }
 
-    pub fn newline(&mut self) -> io::Result<()> {
+    pub fn newline(&mut self) -> Result<()> {
         write!(self.stdout, "\n{}", cursor::Right(self.left_margin - 1))
     }
 
@@ -101,11 +98,11 @@ impl ViewConfig {
         self.width
     }
 
-    pub fn present<P: Present>(&mut self, p: &P) -> io::Result<()> {
+    pub fn present<P: Present>(&mut self, p: &P) -> Result<()> {
         p.present(self)
     }
 
-    pub fn show_text<'a>(&mut self, text: &Cow<'a, str>) -> io::Result<()> {
+    pub fn show_text<'a>(&mut self, text: &Cow<'a, str>) -> Result<()> {
         match self.ctx {
             Context::Default => self.present(text),
             Context::_Paragraph => self.present(text),
@@ -136,80 +133,114 @@ impl ViewConfig {
                 )?;
                 self.present(text)
             }
+
+            Context::List(level) => {
+                (0..level).map(|_i| write!(self, "| ")).count();
+                write!(self, "+- ")?;
+                self.present(text)?;
+                self.newline()
+            }
         }
     }
 
-    pub fn hide_cursor(&mut self) -> io::Result<()> {
+    pub fn hide_cursor(&mut self) -> Result<()> {
         write!(self, "{}", cursor::Hide)
     }
 
-    pub fn show_cursor(&mut self) -> io::Result<()> {
+    pub fn show_cursor(&mut self) -> Result<()> {
         write!(self, "{}", cursor::Show)
     }
 
-    pub fn start_code(&mut self) -> io::Result<()> {
+    pub fn start_code(&mut self) -> Result<()> {
         write!(self, "{}", color::Bg(color::LightWhite))?;
         write!(self, "{}", color::Fg(color::Black))
     }
 
-    pub fn end_code(&mut self) -> io::Result<()> {
+    pub fn end_code(&mut self) -> Result<()> {
         write!(self, "{}", color::Fg(color::Reset))?;
         write!(self, "{}", color::Bg(color::Reset))
     }
 
-    pub fn start_codeblock(&mut self) -> io::Result<()> {
+    pub fn start_codeblock(&mut self) -> Result<()> {
         self.ctx = Context::CodeBlock(0);
+        self.newline()?;
         write!(self, "{}", color::Bg(color::LightWhite))?;
         write!(self, "{}", color::Fg(color::Black))
     }
 
-    pub fn end_codeblock(&mut self) -> io::Result<()> {
+    pub fn end_codeblock(&mut self) -> Result<()> {
         self.ctx = Context::Default;
         self.newline()?;
         write!(self, "{}", color::Fg(color::Reset))?;
         write!(self, "{}", color::Bg(color::Reset))
     }
 
-    pub fn start_italic(&mut self) -> io::Result<()> {
+    pub fn start_italic(&mut self) -> Result<()> {
         write!(self, "{}", style::Italic)
     }
 
-    pub fn end_italic(&mut self) -> io::Result<()> {
+    pub fn end_italic(&mut self) -> Result<()> {
         write!(self, "{}", style::NoItalic)
     }
 
-    pub fn start_bold(&mut self) -> io::Result<()> {
+    pub fn start_bold(&mut self) -> Result<()> {
         write!(self, "{}", style::Bold)
     }
 
-    pub fn end_bold(&mut self) -> io::Result<()> {
+    pub fn end_bold(&mut self) -> Result<()> {
         write!(self, "{}", style::Reset)
     }
 
-    pub fn start_paragraph(&mut self) -> io::Result<()> {
+    pub fn start_paragraph(&mut self) -> Result<()> {
         self.newline()
     }
 
-    pub fn end_paragraph(&mut self) -> io::Result<()> {
+    pub fn end_paragraph(&mut self) -> Result<()> {
         self.newline()
     }
 
-    pub fn start_quote(&mut self) -> io::Result<()> {
+    pub fn start_quote(&mut self) -> Result<()> {
         self.ctx = Context::Quote;
         self.newline()
     }
 
-    pub fn end_quote(&mut self) -> io::Result<()> {
+    pub fn end_quote(&mut self) -> Result<()> {
         self.ctx = Context::Default;
         self.newline()
     }
 
-    pub fn start_header(&mut self, _level: i32) -> io::Result<()> {
+    pub fn start_list(&mut self) -> Result<()> {
+        match self.ctx {
+            Context::List(i) => {
+                self.ctx = Context::List(i + 1);
+            }
+            Context::Default => {
+                self.ctx = Context::List(0);
+            }
+            _ => unimplemented!{},
+        }
+        Ok(())
+    }
+
+    pub fn end_list(&mut self) -> Result<()> {
+        match self.ctx {
+            Context::List(0) => {
+                self.ctx = Context::Default;
+            }
+            Context::List(i) => {
+                self.ctx = Context::List(i - 1);
+            }
+            _ => unimplemented!{},
+        }
+        Ok(())
+    }
+
+    pub fn start_header(&mut self, _level: i32) -> Result<()> {
         self.newline()?;
         write!(self, "{}{}", color::Fg(color::LightCyan), style::Underline)
     }
 
-    pub fn end_header(&mut self, _level: i32) -> io::Result<()> {
+    pub fn end_header(&mut self, _level: i32) -> Result<()> {
         write!(
             self,
             "{}{}",
@@ -221,28 +252,28 @@ impl ViewConfig {
 }
 
 impl Write for ViewConfig {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+    fn write(&mut self, buf: &[u8]) -> Result<usize> {
         self.stdout.write(buf)
     }
-    fn flush(&mut self) -> io::Result<()> {
+    fn flush(&mut self) -> Result<()> {
         self.stdout.flush()
     }
 }
 
 impl Present for String {
-    fn present(&self, view: &mut ViewConfig) -> io::Result<()> {
+    fn present(&self, view: &mut ViewConfig) -> Result<()> {
         write!(view, "{}", self)
     }
 }
 
 impl<'a> Present for &'a str {
-    fn present(&self, view: &mut ViewConfig) -> io::Result<()> {
+    fn present(&self, view: &mut ViewConfig) -> Result<()> {
         write!(view, "{}", self)
     }
 }
 
 impl<'a> Present for Cow<'a, str> {
-    fn present(&self, view: &mut ViewConfig) -> io::Result<()> {
+    fn present(&self, view: &mut ViewConfig) -> Result<()> {
         write!(view, "{}", self)
     }
 }
