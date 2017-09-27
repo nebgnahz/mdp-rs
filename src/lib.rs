@@ -41,7 +41,7 @@ enum Context {
     Quote,
     _Paragraph,
     CodeBlock(usize),
-    List(usize),
+    List(usize, bool),
 }
 
 impl ViewConfig {
@@ -133,12 +133,14 @@ impl ViewConfig {
                 )?;
                 self.present(text)
             }
-
-            Context::List(level) => {
-                (0..level).map(|_i| write!(self, "| ")).count();
-                write!(self, "+- ")?;
-                self.present(text)?;
-                self.newline()
+            Context::List(i, is_first) => {
+                if is_first {
+                    self.ctx = Context::List(i, false);
+                } else {
+                    write!(self, "|")?;
+                    (0..(i + 1)).map(|_| write!(self, "   ")).count();
+                }
+                self.present(text)
             }
         }
     }
@@ -210,12 +212,14 @@ impl ViewConfig {
     }
 
     pub fn start_list(&mut self) -> Result<()> {
+        self.newline()?;
         match self.ctx {
-            Context::List(i) => {
-                self.ctx = Context::List(i + 1);
+            Context::List(i, _) => {
+                self.ctx = Context::List(i + 1, true);
             }
             Context::Default => {
-                self.ctx = Context::List(0);
+                self.newline()?;
+                self.ctx = Context::List(0, true);
             }
             _ => unimplemented!{},
         }
@@ -224,15 +228,39 @@ impl ViewConfig {
 
     pub fn end_list(&mut self) -> Result<()> {
         match self.ctx {
-            Context::List(0) => {
+            Context::List(0, _) => {
                 self.ctx = Context::Default;
             }
-            Context::List(i) => {
-                self.ctx = Context::List(i - 1);
+            Context::List(i, _) => {
+                self.ctx = Context::List(i - 1, true);
+            }
+            ref ctx => {
+                error!("{:?}", &ctx);
+                unimplemented!{}
+            }
+        }
+        Ok(())
+    }
+
+    pub fn start_item(&mut self) -> Result<()> {
+        match self.ctx {
+            Context::List(0, _) => {
+                write!(self, "+- ")?;
+                self.ctx = Context::List(0, true);
+            }
+            Context::List(i, _) => {
+                write!(self, "|")?;
+                (0..i).map(|_| write!(self, "   ")).count();
+                write!(self, "+- ")?;
+                self.ctx = Context::List(i, true);
             }
             _ => unimplemented!{},
         }
         Ok(())
+    }
+
+    pub fn end_item(&mut self) -> Result<()> {
+        self.newline()
     }
 
     pub fn start_header(&mut self, _level: i32) -> Result<()> {

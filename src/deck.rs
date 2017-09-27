@@ -64,6 +64,8 @@ impl<'a> Present for Event<'a> {
             &End(Tag::BlockQuote) => view.end_quote(),
             &Start(Tag::List(_)) => view.start_list(),
             &End(Tag::List(_)) => view.end_list(),
+            &Start(Tag::Item) => view.start_item(),
+            &End(Tag::Item) => view.end_item(),
             &Start(_) => Ok(()),
             &End(_) => Ok(()),
             &Text(ref text) => view.show_text(text),
