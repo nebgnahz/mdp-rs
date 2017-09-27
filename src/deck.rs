@@ -72,7 +72,10 @@ impl<'a> Present for Event<'a> {
             &Html(ref _html) |
             &InlineHtml(ref _html) => unimplemented!{},
             &FootnoteReference(ref _ref) => unimplemented!{},
-            &HardBreak => Ok(()),
+            &HardBreak => {
+                view.newline()?;
+                view.newline()
+            }
         }
     }
 }

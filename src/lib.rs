@@ -48,8 +48,8 @@ enum Context {
 
 #[derive(Debug, Clone, Copy)]
 enum ListState {
-    FirstRow,
-    Continue,
+    ParagraphFirst,
+    ItemContinue,
     JustEnd,
 }
 
@@ -158,10 +158,10 @@ impl ViewConfig {
             }
             Context::List(i, list_state) => {
                 match list_state {
-                    ListState::FirstRow => {
-                        self.ctx = Context::List(i, ListState::Continue);
+                    ListState::ParagraphFirst => {
+                        self.ctx = Context::List(i, ListState::ItemContinue);
                     }
-                    ListState::Continue => {
+                    ListState::ItemContinue => {
                         write!(self, "   ")?;
                         (0..i).map(|_| write!(self, "   ")).count();
                     }
@@ -221,7 +221,10 @@ impl ViewConfig {
     }
 
     pub fn start_paragraph(&mut self) -> Result<()> {
-        self.newline()
+        match self.ctx {
+            Context::List(_, ListState::ParagraphFirst) => Ok(()),
+            _ => self.newline(),
+        }
     }
 
     pub fn end_paragraph(&mut self) -> Result<()> {
@@ -239,19 +242,16 @@ impl ViewConfig {
     }
 
     pub fn start_list(&mut self) -> Result<()> {
-        self.newline()?;
         match self.ctx {
             Context::Default => {
-                self.newline()?;
-                self.ctx = Context::List(0, ListState::FirstRow);
+                self.ctx = Context::List(0, ListState::ParagraphFirst);
             }
             Context::List(i, _) => {
-                self.ctx = Context::List(i + 1, ListState::FirstRow);
+                self.ctx = Context::List(i + 1, ListState::ParagraphFirst);
             }
             _ => unreachable!{},
         }
-        self.newline()?;
-        Ok(())
+        self.newline()
     }
 
     pub fn end_list(&mut self) -> Result<()> {
@@ -267,19 +267,15 @@ impl ViewConfig {
                 unreachable!{}
             }
         }
-        Ok(())
+        self.newline()
     }
 
     pub fn start_item(&mut self) -> Result<()> {
         match self.ctx {
-            Context::List(0, _) => {
-                write!(self, "+- ")?;
-                self.ctx = Context::List(0, ListState::FirstRow);
-            }
             Context::List(i, _) => {
                 (0..i).map(|_| write!(self, "   ")).count();
                 write!(self, "+- ")?;
-                self.ctx = Context::List(i, ListState::FirstRow);
+                self.ctx = Context::List(i, ListState::ParagraphFirst);
             }
             _ => unimplemented!{},
         }
@@ -290,7 +286,6 @@ impl ViewConfig {
         match self.ctx {
             Context::List(_level, ListState::JustEnd) => Ok(()),
             Context::List(level, _) => {
-                self.newline()?;
                 self.ctx = Context::List(level, ListState::JustEnd);
                 self.newline()
             }

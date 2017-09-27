@@ -8,11 +8,14 @@
 # List and Item
 
 1. First ordered list item
+   1. First ordered list item
+
+      You can also add another item here, I assume
+
+   2. Second ordered list item
 2. Another item
-  * Unordered sub-list.
-1. Actual numbers don't matter, just that it's a number
-  1. Ordered sub-list
-4. And another item.
+3. Another third item
+4. Unordered sub-list.
 
    You can have properly indented paragraphs within list items. Notice the blank
    line above, and the leading spaces (at least one, but we'll use three here to
