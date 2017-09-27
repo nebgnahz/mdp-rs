@@ -4,14 +4,16 @@ version = "0.0.1"
 authors = ["Ben Zhang <benzh@cs.berkeley.edu>"]
 
 [dependencies]
+chan-signal="0.3.1"
+env_logger = "*"
+log = "*"
+pulldown-cmark = "0.0.8"
 structopt = "0.1.0"
 structopt-derive = "0.1.0"
-termios = "0.2.2"
-pulldown-cmark = "0.0.8"
 termion = "1.1.1"
+termios = "0.2.2"
 textwrap = "0.8"
-log = "*"
-env_logger = "*"
+chan = "0.1.19"
 
 [[bin]]
 doc = false

@@ -1,4 +1,12 @@
-# Quote
+# A Markdown Presentation Tool
+
+Ben Zhang
+
+2016-02-07
+
+-------
+
+### Quote
 
 > Start by doing what's necessary; then do what's possible; and suddenly you are
 > doing the impossible.

@@ -1,6 +1,6 @@
+use input::ImmediateInput;
 use super::ViewConfig;
 use deck::{Deck, Slide};
-use input::ImmediateInput;
 use std::borrow::Cow;
 use std::io;
 use std::io::Write;
@@ -8,6 +8,8 @@ use std::io::stdin;
 use termion::{color, cursor};
 use termion::event::Key;
 use termion::input::TermRead;
+use chan_signal::{self, Signal};
+use chan;
 
 fn show_help(view: &mut ViewConfig) -> io::Result<()> {
     let help = r#"
@@ -31,42 +33,70 @@ fn show_help(view: &mut ViewConfig) -> io::Result<()> {
 pub fn display(mut deck: Deck) -> io::Result<()> {
     let mut view = ViewConfig::new()?;
     let mut key_reader = stdin().keys();
+    let signal = chan_signal::notify(&[Signal::INT, Signal::TERM]);
 
-    // Modify the terminal behavior to return immediate result (not
-    // line-buffered).
     let input = ImmediateInput::new(0);
     input.set_immediate();
 
     show_help(&mut view)?;
 
-    loop {
+    let (key_tx, key) = chan::sync(8);
+    ::std::thread::spawn(move || loop {
         while let Some(c) = key_reader.next() {
-            match c.unwrap() {
-                Key::Char('q') => {
-                    view.reset()?;
-                    view.show_cursor()?;
-                    return view.flush();
-                }
-                Key::Char('s') => {}
-                Key::Char('r') => {
-                    view.update()?;
-                }
-                Key::Right | Key::Down | Key::Char('j') | Key::Char(' ') => {
-                    deck.next();
-                }
-                Key::Left | Key::Up | Key::Char('k') => {
-                    deck.previous();
-                }
-                _ => {}
+            if c.is_ok() {
+                key_tx.send(c.unwrap())
             }
-            break;
         }
+    });
 
-        view.clear()?;
-        view.present(deck.slide())?;
-        show_page_num(&deck, &mut view)?;
-        view.hide_cursor()?;
-        view.flush()?;
+    // Wait for a signal or for work to be done.
+    loop {
+        chan_select! {
+            signal.recv() -> signal => {
+                let signal = signal.unwrap();
+                match signal {
+                    Signal::INT | Signal::TERM => {
+                        view.quit()?;
+                        return Ok(());
+                    }
+                    Signal::TSTP => {
+                        view.quit()?;
+                    }
+                    Signal::CONT => {
+                        input.set_immediate();
+                        view.update()?;
+                    }
+                    _ => {
+                        unreachable!{}
+                    }
+                }
+            },
+            key.recv() -> key => {
+                let key = key.unwrap();
+                match key {
+                    Key::Char('q') => {
+                        return view.quit();
+                    }
+                    Key::Char('s') => {}
+                    Key::Char('r') => {
+                        view.update()?;
+                    }
+                    Key::Right | Key::Down | Key::Char('j') | Key::Char(' ') => {
+                        deck.next();
+                    }
+                    Key::Left | Key::Up | Key::Char('k') => {
+                        deck.previous();
+                    }
+                    _ => {}
+                }
+
+                view.clear()?;
+                view.present(deck.slide())?;
+                show_page_num(&deck, &mut view)?;
+                view.hide_cursor()?;
+                view.flush()?;
+            },
+        }
     }
 }
 

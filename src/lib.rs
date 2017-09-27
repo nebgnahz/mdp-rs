@@ -3,6 +3,9 @@ extern crate log;
 extern crate termion;
 extern crate termios;
 extern crate pulldown_cmark;
+extern crate chan_signal;
+#[macro_use]
+extern crate chan;
 
 mod deck;
 pub use deck::Deck;
@@ -96,6 +99,12 @@ impl ViewConfig {
             termion::clear::All,
             cursor::Goto(self.left_margin, self.top_margin)
         )
+    }
+
+    pub fn quit(&mut self) -> Result<()> {
+        self.reset()?;
+        self.show_cursor()?;
+        self.flush()
     }
 
     pub fn reset(&mut self) -> Result<()> {
