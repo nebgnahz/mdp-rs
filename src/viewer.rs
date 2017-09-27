@@ -48,6 +48,9 @@ pub fn display(mut deck: Deck) -> io::Result<()> {
                     return view.flush();
                 }
                 Key::Char('s') => {}
+                Key::Char('r') => {
+                    view.update()?;
+                }
                 Key::Right | Key::Down | Key::Char('j') | Key::Char(' ') => {
                     deck.next();
                 }

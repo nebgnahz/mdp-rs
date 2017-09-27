@@ -57,6 +57,7 @@ impl ViewConfig {
     pub fn new() -> Result<Self> {
         let (term_width, term_height) = termion::terminal_size()?;
         let width = std::cmp::min(80, term_width - 4);
+        let bottom_margin = term_height / 10;
 
         let view = ViewConfig {
             term_width: term_width,
@@ -68,11 +69,24 @@ impl ViewConfig {
             left_margin: (term_width - width) / 2 - 1,
             right_margin: (term_width - width) / 2,
             top_margin: 2,
-            bottom_margin: 10,
+            bottom_margin: bottom_margin,
 
             ctx: Context::Default,
         };
         Ok(view)
+    }
+
+    pub fn update(&mut self) -> Result<()> {
+        let (term_width, term_height) = termion::terminal_size()?;
+        let width = std::cmp::min(80, term_width - 4);
+
+        self.term_width = term_width;
+        self.term_height = term_height;
+        self.width = width;
+        self.left_margin = (term_width - width) / 2 - 1;
+        self.right_margin = (term_width - width) / 2;
+        self.bottom_margin = term_height / 10;
+        Ok(())
     }
 
     pub fn clear(&mut self) -> Result<()> {
@@ -158,13 +172,6 @@ impl ViewConfig {
         }
     }
 
-    fn list_one_more_line(&mut self) -> Result<()> {
-        match self.ctx {
-            Context::List(_i, _state) => self.newline(),
-            _ => unreachable!{},
-        }
-    }
-
     pub fn hide_cursor(&mut self) -> Result<()> {
         write!(self, "{}", cursor::Hide)
     }
@@ -243,7 +250,7 @@ impl ViewConfig {
             }
             _ => unreachable!{},
         }
-        self.list_one_more_line()?;
+        self.newline()?;
         Ok(())
     }
 
@@ -285,7 +292,7 @@ impl ViewConfig {
             Context::List(level, _) => {
                 self.newline()?;
                 self.ctx = Context::List(level, ListState::JustEnd);
-                self.list_one_more_line()
+                self.newline()
             }
             _ => {
                 unreachable!{}
