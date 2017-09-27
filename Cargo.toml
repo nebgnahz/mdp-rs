@@ -14,8 +14,3 @@ termion = "1.1.1"
 termios = "0.2.2"
 textwrap = "0.8"
 chan = "0.1.19"
-
-[[bin]]
-doc = false
-name = "main"
-path = "src/main.rs"

@@ -1,6 +1,6 @@
 use std::os::unix::io::RawFd;
 
-use termios::{Termios, tcsetattr, ICANON, ECHO, TCSANOW};
+use termios::{Termios, tcsetattr, ICANON, ECHO, TCSANOW, IEXTEN};
 
 pub struct ImmediateInput {
     stdin: RawFd,
@@ -23,7 +23,8 @@ impl ImmediateInput {
 
     pub fn set_immediate(&self) {
         let mut new_termios = self.original_termios.clone();
-        new_termios.c_lflag &= !(ICANON | ECHO);
+        // local modes: choing off, canonical off, no extended functions
+        new_termios.c_lflag &= !(ICANON | ECHO | IEXTEN);
         match tcsetattr(self.stdin, TCSANOW, &new_termios) {
             Ok(_) => {}
             Err(e) => panic!("failed to set attritbute, err: {}", e),
