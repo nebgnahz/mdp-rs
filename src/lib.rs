@@ -3,9 +3,6 @@ extern crate log;
 extern crate termion;
 extern crate termios;
 extern crate pulldown_cmark;
-extern crate chan_signal;
-#[macro_use]
-extern crate chan;
 
 mod deck;
 pub use deck::Deck;
