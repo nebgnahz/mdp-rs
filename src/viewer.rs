@@ -1,8 +1,8 @@
 use deck::{Deck, Slide};
+use get::get_string;
 use input::ImmediateInput;
 use std::borrow::Cow;
-use std::io::{Read, Result, Write, stdin};
-use std::path::Path;
+use std::io::{Result, Write, stdin};
 use termion::{color, cursor};
 use termion::event::Key;
 use termion::input::TermRead;
@@ -27,20 +27,13 @@ fn _show_help(view: &mut View) -> Result<()> {
     view.info()
 }
 
-fn file_to_string<P: AsRef<Path>>(p: P) -> Result<String> {
-    let mut f = ::std::fs::File::open(p)?;
-    let mut s = String::new();
-    f.read_to_string(&mut s)?;
-    Ok(s)
-}
-
-pub fn play<P: AsRef<Path>>(path: P) -> Result<()> {
+pub fn play(path: &str) -> Result<()> {
     let mut view = View::new()?;
     let input = ImmediateInput::new(0);
     input.set_immediate();
     let mut slide_num = 0;
     loop {
-        let content = file_to_string(&path)?;
+        let content = get_string(&path)?;
         let deck = Deck::new(&content)?;
         let ret = show(deck, &mut view, slide_num)?;
         match ret {

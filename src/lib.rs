@@ -15,6 +15,7 @@ mod split;
 mod view;
 mod viewer;
 mod image;
+mod get;
 
 pub use deck::Deck;
 pub use image::inline_image;
