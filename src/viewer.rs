@@ -38,18 +38,20 @@ pub fn play<P: AsRef<Path>>(path: P) -> Result<()> {
     let mut view = View::new()?;
     let input = ImmediateInput::new(0);
     input.set_immediate();
-
+    let mut slide_num = 0;
     loop {
         let content = file_to_string(&path)?;
         let deck = Deck::new(&content)?;
-        show(deck, &mut view, 0)?;
-        break;
-        // if file changes, reload, otherwise, we won't be here.
+        let ret = show(deck, &mut view, slide_num)?;
+        match ret {
+            Some(num) => slide_num = num,
+            None => break,
+        }
     }
     Ok(())
 }
 
-fn show(mut deck: Deck, view: &mut View, start: usize) -> Result<()> {
+fn show(mut deck: Deck, view: &mut View, start: usize) -> Result<Option<usize>> {
     let mut key_reader = stdin().keys();
 
     deck.goto(start);
@@ -59,15 +61,19 @@ fn show(mut deck: Deck, view: &mut View, start: usize) -> Result<()> {
     view.hide_cursor()?;
     view.flush()?;
 
-    loop {
+    'outer: loop {
         while let Some(c) = key_reader.next() {
             match c.unwrap() {
                 Key::Char('q') => {
-                    return view.quit();
+                    view.quit()?;
+                    return Ok(None);
                 }
                 Key::Char('s') => {}
                 Key::Char('r') => {
                     view.update()?;
+                }
+                Key::Char('l') => {
+                    break 'outer;
                 }
                 Key::Right | Key::Down | Key::Char('j') | Key::Char(' ') => {
                     deck.next();
@@ -85,7 +91,7 @@ fn show(mut deck: Deck, view: &mut View, start: usize) -> Result<()> {
             view.flush()?;
         }
     }
-
+    Ok(Some(deck.current_num()))
 }
 
 
