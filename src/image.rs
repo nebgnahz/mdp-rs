@@ -4,11 +4,10 @@
 /// ESC ] 1337 ; File = [optional arguments] : base-64 encoded file contents ^G
 /// ```
 use base64::encode;
-use reqwest;
+use get::get_vec;
 use std::collections::HashMap;
 use std::env::var;
-use std::fs::File;
-use std::io::{Error, ErrorKind, Read, Result, Write};
+use std::io::{Error, ErrorKind, Result, Write};
 use std::sync::Mutex;
 
 fn support_image() -> bool {
@@ -60,26 +59,10 @@ where
 }
 
 pub fn retrieve_image(path: String) {
-    let mut contents = Vec::new();
-    match reqwest::Url::parse(&path) {
-        Ok(url) => {
-            if let Err(_) = reqwest::get(url)
-                .map_err(|_e| Error::new(ErrorKind::NotConnected, "reqwest"))
-                .and_then(|mut r| r.read_to_end(&mut contents))
-            {
-                return;
-            }
-        }
-        Err(_) => {
-            let r = File::open(&path).and_then(|mut r| r.read_to_end(&mut contents));
-            if let Err(_) = r {
-                return;
-            }
-        }
+    if let Ok(content) = get_vec(&path) {
+        let base64 = encode(&content);
+        let mut store = IMAGE_STORE.lock().unwrap();
+        println!("inserting {}", path);
+        store.insert(path, base64);
     }
-
-    let base64 = encode(&contents);
-    let mut store = IMAGE_STORE.lock().unwrap();
-    println!("inserting {}", path);
-    store.insert(path, base64);
 }

@@ -23,5 +23,5 @@ fn main() {
 }
 
 fn run(opt: Opt) -> Result<()> {
-    mdp::play(opt.file)
+    mdp::play(&opt.file)
 }
