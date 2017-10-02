@@ -1,5 +1,3 @@
-#![cfg_attr(feature="clippy", feature(plugin))]
-
 extern crate env_logger;
 extern crate mdp;
 extern crate structopt;

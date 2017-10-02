@@ -5,7 +5,7 @@ authors = ["Ben Zhang <benzh@cs.berkeley.edu>"]
 
 [dependencies]
 base64 = "0.7.0"
-clippy = "*"
+# clippy = "*"
 env_logger = "*"
 lazy_static = "0.2"
 log = "*"
