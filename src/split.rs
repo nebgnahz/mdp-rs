@@ -69,7 +69,7 @@ impl<'a> Iterator for Split<'a> {
     }
 }
 
-pub fn split<'a>(buf: &'a str) -> Split<'a> {
+pub fn split(buf: &str) -> Split {
     Split {
         buf: buf,
         parser: Parser::new(buf),

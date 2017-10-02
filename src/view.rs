@@ -24,7 +24,6 @@ pub struct View {
 enum Context {
     Default,
     Quote,
-    _Paragraph,
     CodeBlock(usize),
 
     /// Whether we have the image successfully loaded or not. This affects
@@ -122,10 +121,10 @@ impl View {
 
     pub fn show_text<'a>(&mut self, text: &Cow<'a, str>) -> Result<()> {
         match self.ctx {
-            Context::Default => self.present(text),
-            Context::_Paragraph => self.present(text),
+            Context::Default |
+            Context::Image(false) => self.present(text),
             Context::CodeBlock(i) => {
-                if text.ends_with("\n") {
+                if text.ends_with('\n') {
                     let content = text.trim_right_matches('\n');
 
                     let cols = self.width() as usize;
@@ -165,7 +164,6 @@ impl View {
                 self.present(text)
             }
             Context::Image(true) => Ok(()),
-            Context::Image(false) => self.present(text),
         }
     }
 

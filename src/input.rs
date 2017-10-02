@@ -22,7 +22,7 @@ impl ImmediateInput {
     }
 
     pub fn set_immediate(&self) {
-        let mut new_termios = self.original_termios.clone();
+        let mut new_termios = self.original_termios;
         // local modes: choing off, canonical off, no extended functions
         new_termios.c_lflag &= !(ICANON | ECHO | IEXTEN);
         match tcsetattr(self.stdin, TCSANOW, &new_termios) {
@@ -36,8 +36,8 @@ impl Drop for ImmediateInput {
     fn drop(&mut self) {
         match tcsetattr(self.stdin, TCSANOW, &self.original_termios) {
             Ok(_) => {}
-            Err(_) => {
-                panic!("failed to reset the input terminal");
+            Err(e) => {
+                panic!("failed to reset the input terminal {}", e);
             }
         }
     }

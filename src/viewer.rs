@@ -33,7 +33,7 @@ pub fn play(path: &str) -> Result<()> {
     input.set_immediate();
     let mut slide_num = 0;
     loop {
-        let content = get_string(&path)?;
+        let content = get_string(path)?;
         let deck = Deck::new(&content)?;
         let ret = show(deck, &mut view, slide_num)?;
         match ret {
@@ -61,7 +61,6 @@ fn show(mut deck: Deck, view: &mut View, start: usize) -> Result<Option<usize>> 
                     view.quit()?;
                     return Ok(None);
                 }
-                Key::Char('s') => {}
                 Key::Char('r') => {
                     view.update()?;
                 }
@@ -93,7 +92,7 @@ fn show_page_num<'a>(deck: &'a Deck, view: &mut View) -> Result<()> {
     let mut s = String::new();
     write!(&mut s, "{} / {}", deck.current_num() + 1, deck.total_num()).unwrap();
     let (mut x, y) = view.right_bottom();
-    x = x - s.len() as u16;
+    x -=  s.len() as u16;
     write!(view, "{}", cursor::Goto(x, y))?;
     write!(view, "{}", color::Fg(color::LightRed))?;
     write!(view, "{}", s)?;

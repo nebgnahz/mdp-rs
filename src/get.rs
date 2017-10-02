@@ -4,7 +4,7 @@ use std::io::{Error, ErrorKind, Read, Result};
 
 pub fn get_vec(path: &str) -> Result<Vec<u8>> {
     let mut contents = Vec::new();
-    match reqwest::Url::parse(&path) {
+    match reqwest::Url::parse(path) {
         Ok(url) => {
             reqwest::get(url)
                 .map_err(|_e| Error::new(ErrorKind::NotConnected, "reqwest"))
@@ -21,7 +21,7 @@ pub fn get_vec(path: &str) -> Result<Vec<u8>> {
 
 pub fn get_string(path: &str) -> Result<String> {
     let mut contents = String::new();
-    match reqwest::Url::parse(&path) {
+    match reqwest::Url::parse(path) {
         Ok(url) => {
             reqwest::get(url)
                 .map_err(|_e| Error::new(ErrorKind::NotConnected, "reqwest"))

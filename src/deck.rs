@@ -29,7 +29,7 @@ impl<'a> Slide<'a> {
 
 impl<'a> Deck<'a> {
     pub fn new(content: &'a str) -> io::Result<Deck<'a>> {
-        let slides = split::split(content).map(|s| Slide::new(s)).collect();
+        let slides = split::split(content).map(Slide::new).collect();
 
         let deck = Deck {
             slides: slides,

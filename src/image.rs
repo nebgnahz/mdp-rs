@@ -12,7 +12,7 @@ use std::sync::Mutex;
 
 fn support_image() -> bool {
     match var("TERM_PROGRAM") {
-        Ok(term) => if term == "iTerm.app" { true } else { false },
+        Ok(term) => term == "iTerm.app",
         Err(_) => false,
     }
 }
